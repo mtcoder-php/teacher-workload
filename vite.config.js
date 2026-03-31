@@ -16,12 +16,14 @@ export default defineConfig({
                 },
             },
         }),
+        // @tailwindcss/vite (v4) O'CHIRILDI
+        // Tailwind v3 postcss.config.js orqali ishlaydi
     ],
     server: {
-        host: '0.0.0.0', // Barcha interfeyslardan ulanish uchun
+        host: '0.0.0.0',
         port: 5173,
         hmr: {
-            host: 'localhost', // Yoki server IP manzilingiz
+            host: 'localhost',
         },
     },
     resolve: {

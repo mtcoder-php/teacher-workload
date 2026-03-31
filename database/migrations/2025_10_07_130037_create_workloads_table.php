@@ -75,6 +75,7 @@ return new class extends Migration
             // ==========================================
             $table->integer('total_students')->default(0)->comment('Jami talabalar soni');
             $table->decimal('rating', 10, 2)->default(0)->comment('Reyting (talabalar / 2)');
+            $table->boolean('has_rating')->default(false)->comment('Kafedra mudiri reyting berganmi'); // ← QO'SHING
             $table->decimal('total_hours', 10, 2)->default(0)->comment('Jami soatlar');
 
             // Status

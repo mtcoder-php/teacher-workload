@@ -36,7 +36,8 @@ class Workload extends Model
 
         // Statistika
         'total_students', 'rating', 'total_hours',
-        'status', 'approved_by', 'approved_at', 'notes'
+        'status', 'approved_by', 'approved_at', 'notes',
+        'has_rating',
     ];
 
     protected $casts = [
@@ -69,6 +70,7 @@ class Workload extends Model
         'diploma_hours' => 'decimal:2',
         'consultation_hours' => 'decimal:2',
         'total_hours' => 'decimal:2',
+        'has_rating' => 'boolean',
     ];
 
     protected $appends = ['calculated_total_hours', 'status_label'];

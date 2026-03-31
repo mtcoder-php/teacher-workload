@@ -323,30 +323,32 @@
             <!-- Page Content -->
             <main class="p-6">
                 <!-- Flash Messages -->
-                <div v-if="$page.props.flash?.success"
-                    class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center space-x-3">
-                    <Icon :size="20" class="text-green-600 flex-shrink-0">
-                        <CheckmarkCircleOutline />
-                    </Icon>
-                    <span>{{ $page.props.flash.success }}</span>
-                </div>
-                <div v-if="$page.props.flash?.error"
-                    class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center space-x-3">
-                    <Icon :size="20" class="text-red-600 flex-shrink-0">
-                        <CloseCircleOutline />
-                    </Icon>
-                    <span>{{ $page.props.flash.error }}</span>
-                </div>
-                <div v-if="$page.props.flash?.warning"
-                    class="mb-4 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg flex items-center space-x-3">
-                    <Icon :size="20" class="text-yellow-600 flex-shrink-0">
-                        <WarningOutline />
-                    </Icon>
-                    <span>{{ $page.props.flash.warning }}</span>
-                </div>
+<!--                <div v-if="$page.props.flash?.success"-->
+<!--                    class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center space-x-3">-->
+<!--                    <Icon :size="20" class="text-green-600 flex-shrink-0">-->
+<!--                        <CheckmarkCircleOutline />-->
+<!--                    </Icon>-->
+<!--                    <span>{{ $page.props.flash.success }}</span>-->
+<!--                </div>-->
+<!--                <div v-if="$page.props.flash?.error"-->
+<!--                    class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center space-x-3">-->
+<!--                    <Icon :size="20" class="text-red-600 flex-shrink-0">-->
+<!--                        <CloseCircleOutline />-->
+<!--                    </Icon>-->
+<!--                    <span>{{ $page.props.flash.error }}</span>-->
+<!--                </div>-->
+<!--                <div v-if="$page.props.flash?.warning"-->
+<!--                    class="mb-4 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg flex items-center space-x-3">-->
+<!--                    <Icon :size="20" class="text-yellow-600 flex-shrink-0">-->
+<!--                        <WarningOutline />-->
+<!--                    </Icon>-->
+<!--                    <span>{{ $page.props.flash.warning }}</span>-->
+<!--                </div>-->
 
                 <slot />
             </main>
+            <!-- Toast xabarnomalar (ekran o'ng yuqori burchagida) -->
+            <ToastContainer />
         </div>
 
         <!-- Mobile Sidebar Overlay -->
@@ -356,7 +358,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch  } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { Icon } from '@vicons/utils';
 import {
@@ -392,7 +394,12 @@ import {
     ClipboardOutline,
 } from '@vicons/ionicons5';
 import NavLink from '@/Components/NavLink.vue';
+// Quyidagi ikki qatorni mavjud import lar bilan birga qo'shing:
+import ToastContainer from '@/Components/ToastContainer.vue'
+import { useToast }   from '@/Composables/useToast'
 
+// setup() ichida (yoki script setup da):
+const toast = useToast()
 const sidebarOpen = ref(false);
 const userMenuOpen = ref(false);
 const notificationsOpen = ref(false);
@@ -503,6 +510,34 @@ const formatRelativeTime = (dateString) => {
 
     return date.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
 };
+
+
+
+// Flash xabarlarni kuzatish — sahifa o'tishlarida toast chiqarish
+watch(
+    () => usePage().props.flash,
+    (flash) => {
+        if (flash?.success) toast.success(flash.success)
+        if (flash?.error)   toast.error(flash.error)
+        if (flash?.warning) toast.warning(flash.warning)
+        if (flash?.info)    toast.info(flash.info)
+    },
+    { deep: true }
+)
+
+// Inertia validation xatolari — birinchi xatoni toast da ko'rsatish
+watch(
+    () => usePage().props.errors,
+    (errors) => {
+        if (!errors) return
+        const messages = Object.values(errors).flat()
+        if (messages.length > 0) {
+            toast.error(messages[0])
+        }
+    },
+    { deep: true }
+)
+
 </script>
 
 <style scoped>

@@ -333,6 +333,14 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::put('/{workload}', [WorkloadController::class, 'update'])->name('update');
         Route::delete('/{workload}', [WorkloadController::class, 'destroy'])->name('destroy');
         Route::post('/{workload}/remainder', [WorkloadController::class, 'createRemainder'])->name('create-remainder');
+
+
+        // Tasdiqlash tizimi
+        Route::post('/{workload}/submit',  [WorkloadController::class, 'submit']) ->name('submit');
+        Route::post('/{workload}/approve', [WorkloadController::class, 'approve'])->name('approve');
+        Route::post('/{workload}/reject',  [WorkloadController::class, 'reject']) ->name('reject');
+
+        Route::get('/ajax/rating-status', [WorkloadController::class, 'getRatingStatus']);
     });
 
 
