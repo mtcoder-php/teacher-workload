@@ -61,13 +61,10 @@ class WorkloadAjaxController extends Controller
                 $query->where('id', '!=', (int) $excludeId);
             }
 
-            // Faqat shu guruhlarga tegishli yuklamalar
-            $groupIds = $request->input('group_ids', []);
-            if (!empty($groupIds)) {
-                $query->whereHas('groups', fn($q) =>
-                $q->whereIn('groups.id', $groupIds)
-                );
-            }
+            // MUHIM: group_ids filtri YO'Q!
+            // Fan soatlarini hisoblashda BARCHA guruhlar uchun taqsimlangan
+            // soatlar hisobga olinadi. Masalan, fan soati = 100, 1-guruhga
+            // 60 soat berilgan bo'lsa, 2-guruh uchun qolgan = 40.
 
             // SELECT raw alias lar
             $selectParts = array_map(

@@ -38,11 +38,13 @@ class WorkloadValidationService
             'potok_code' => null,
             'potok_id' => null,
 
-            // Mavjud soatlar
-            'has_lecture' => false,
-            'has_practice' => false,
+            // Mavjud soatlar — semestr bo'yicha alohida
+            'has_lecture'    => false,
+            'has_s1_lecture' => false,
+            'has_s2_lecture' => false,
+            'has_practice'   => false,
             'has_laboratory' => false,
-            'has_seminar' => false,
+            'has_seminar'    => false,
 
             // Qolgan soatlar (subjectdan)
             'remaining_lecture' => $subject->semester_1_lecture + $subject->semester_2_lecture,
@@ -68,12 +70,20 @@ class WorkloadValidationService
         $status['has_workload'] = true;
 
         foreach ($existingWorkloads as $workload) {
-            // Ma'ruza soatlari borligini tekshirish
-            $lectureHours = $workload->semester_1_lecture + $workload->semester_2_lecture;
+            // Ma'ruza soatlari borligini tekshirish — semestr bo'yicha alohida
+            $s1Lecture = $workload->semester_1_lecture;
+            $s2Lecture = $workload->semester_2_lecture;
+            $lectureHours = $s1Lecture + $s2Lecture;
             $practiceHours = $workload->semester_1_practical + $workload->semester_2_practical;
             $labHours = $workload->semester_1_laboratory + $workload->semester_2_laboratory;
             $seminarHours = $workload->semester_1_seminar + $workload->semester_2_seminar;
 
+            if ($s1Lecture > 0) {
+                $status['has_s1_lecture'] = true;
+            }
+            if ($s2Lecture > 0) {
+                $status['has_s2_lecture'] = true;
+            }
             if ($lectureHours > 0) {
                 $status['has_lecture'] = true;
                 $status['remaining_lecture'] = max(0, $status['remaining_lecture'] - $lectureHours);
@@ -110,14 +120,26 @@ class WorkloadValidationService
                     $status['errors'][] = "Bu guruh '{$workload->potok_code}' potokida va to'liq yuklama berilgan.";
                 }
             } else {
-                // Oddiy yuklama
-                if ($status['has_lecture'] && $status['has_practice'] && $status['has_laboratory'] && $status['has_seminar']) {
-                    $status['can_create_potok'] = false;
+                // Oddiy yuklama — faqat barcha qolgan soatlar berilgan bo'lsa bloklash
+                // 1-semestr ma'ruzasi: fan da bor va berilgan bo'lsa
+                $s1LectureGiven = $subject->semester_1_lecture > 0
+                    ? $status['has_s1_lecture'] : true;
+                // 2-semestr ma'ruzasi: fan da bor va berilgan bo'lsa
+                $s2LectureGiven = $subject->semester_2_lecture > 0
+                    ? $status['has_s2_lecture'] : true;
+                $allLectureGiven  = $s1LectureGiven && $s2LectureGiven;
+
+                $allPracticeGiven = ($subject->semester_1_practical + $subject->semester_2_practical > 0)
+                    ? $status['has_practice'] : true;
+                $allLabGiven      = ($subject->semester_1_laboratory + $subject->semester_2_laboratory > 0)
+                    ? $status['has_laboratory'] : true;
+                $allSeminarGiven  = ($subject->semester_1_seminar + $subject->semester_2_seminar > 0)
+                    ? $status['has_seminar'] : true;
+
+                if ($allLectureGiven && $allPracticeGiven && $allLabGiven && $allSeminarGiven) {
+                    $status['can_create_potok']   = false;
                     $status['can_create_regular'] = false;
                     $status['errors'][] = "Bu guruhga bu fandan to'liq yuklama allaqachon berilgan.";
-                } else if ($status['has_lecture']) {
-                    $status['can_create_potok'] = false;
-                    $status['warnings'][] = "Ma'ruza allaqachon berilgan. Faqat qolgan soatlar uchun yuklama yaratishingiz mumkin.";
                 }
             }
         }
@@ -209,7 +231,7 @@ class WorkloadValidationService
     ): array {
         $status = $this->checkGroupStatus($groupId, $subjectId, $academicYearId);
 
-        // Agar ma'ruza kiritilmoqchi bo'lsa va guruh potokda bo'lsa
+        // Agar 1-semestr ma'ruzasi kiritilmoqchi bo'lsa va guruh potokda bo'lsa
         if (($hours['semester_1_lecture'] > 0 || $hours['semester_2_lecture'] > 0) && $status['is_in_potok']) {
             return [
                 'can_create' => false,
@@ -217,11 +239,19 @@ class WorkloadValidationService
             ];
         }
 
-        // Agar ma'ruza kiritilmoqchi bo'lsa va allaqachon ma'ruza berilgan bo'lsa
-        if (($hours['semester_1_lecture'] > 0 || $hours['semester_2_lecture'] > 0) && $status['has_lecture']) {
+        // 1-semestr ma'ruzasi kiritilmoqchi va allaqachon 1-semestr ma'ruzasi berilgan
+        if ($hours['semester_1_lecture'] > 0 && $status['has_s1_lecture']) {
             return [
                 'can_create' => false,
-                'message' => "Bu guruhga allaqachon ma'ruza berilgan. Takror yuklama yaratib bo'lmaydi.",
+                'message' => "Bu guruhga 1-semestr ma'ruzasi allaqachon berilgan.",
+            ];
+        }
+
+        // 2-semestr ma'ruzasi kiritilmoqchi va allaqachon 2-semestr ma'ruzasi berilgan
+        if ($hours['semester_2_lecture'] > 0 && $status['has_s2_lecture']) {
+            return [
+                'can_create' => false,
+                'message' => "Bu guruhga 2-semestr ma'ruzasi allaqachon berilgan.",
             ];
         }
 
@@ -284,69 +314,69 @@ class WorkloadValidationService
             $errors['academic_year_id'] = 'O\'quv yili topilmadi';
         }
 
-    // Potok validatsiyasi
-if ($data['is_potok'] ?? false) {
-$potokCheck = $this->canCreatePotok(
-$data['group_ids'],
-$data['subject_id'],
-$data['academic_year_id']
-);
+        // Potok validatsiyasi
+        if ($data['is_potok'] ?? false) {
+            $potokCheck = $this->canCreatePotok(
+                $data['group_ids'],
+                $data['subject_id'],
+                $data['academic_year_id']
+            );
 
-if (!$potokCheck['can_create']) {
-$errors['is_potok'] = $potokCheck['message'];
-}
+            if (!$potokCheck['can_create']) {
+                $errors['is_potok'] = $potokCheck['message'];
+            }
 
 // Potok uchun FAQAT ma'ruza soatlari bo'lishi kerak
-if (($data['semester_1_practical'] ?? 0) > 0 ||
-    ($data['semester_1_laboratory'] ?? 0) > 0 ||
-    ($data['semester_1_seminar'] ?? 0) > 0 ||
-    ($data['semester_2_practical'] ?? 0) > 0 ||
-    ($data['semester_2_laboratory'] ?? 0) > 0 ||
-    ($data['semester_2_seminar'] ?? 0) > 0) {
-    $errors['is_potok'] = 'Potok uchun faqat ma\'ruza soatlari kiritilishi kerak. Amaliy, laboratoriya va seminar soatlari guruhlar uchun alohida beriladi.';
-}
+            if (($data['semester_1_practical'] ?? 0) > 0 ||
+                ($data['semester_1_laboratory'] ?? 0) > 0 ||
+                ($data['semester_1_seminar'] ?? 0) > 0 ||
+                ($data['semester_2_practical'] ?? 0) > 0 ||
+                ($data['semester_2_laboratory'] ?? 0) > 0 ||
+                ($data['semester_2_seminar'] ?? 0) > 0) {
+                $errors['is_potok'] = 'Potok uchun faqat ma\'ruza soatlari kiritilishi kerak. Amaliy, laboratoriya va seminar soatlari guruhlar uchun alohida beriladi.';
+            }
 
 // Potokda ma'ruza soatlari bo'lishi shart
-if (($data['semester_1_lecture'] ?? 0) <= 0 && ($data['semester_2_lecture'] ?? 0) <= 0) {
-    $errors['is_potok'] = 'Potok uchun ma\'ruza soatlari kiritilishi shart.';
-}
-} else {
-    // Oddiy yuklama uchun har bir guruhni tekshirish
-    foreach ($data['group_ids'] as $groupId) {
-        $hours = [
-            'semester_1_lecture' => $data['semester_1_lecture'] ?? 0,
-            'semester_2_lecture' => $data['semester_2_lecture'] ?? 0,
-        ];
+            if (($data['semester_1_lecture'] ?? 0) <= 0 && ($data['semester_2_lecture'] ?? 0) <= 0) {
+                $errors['is_potok'] = 'Potok uchun ma\'ruza soatlari kiritilishi shart.';
+            }
+        } else {
+            // Oddiy yuklama uchun har bir guruhni tekshirish
+            foreach ($data['group_ids'] as $groupId) {
+                $hours = [
+                    'semester_1_lecture' => $data['semester_1_lecture'] ?? 0,
+                    'semester_2_lecture' => $data['semester_2_lecture'] ?? 0,
+                ];
 
-        $check = $this->canCreateRegular(
-            $groupId,
-            $data['subject_id'],
-            $data['academic_year_id'],
-            $hours
-        );
+                $check = $this->canCreateRegular(
+                    $groupId,
+                    $data['subject_id'],
+                    $data['academic_year_id'],
+                    $hours
+                );
 
-        if (!$check['can_create']) {
-            $errors['group_ids'] = $check['message'];
-            break;
+                if (!$check['can_create']) {
+                    $errors['group_ids'] = $check['message'];
+                    break;
+                }
+            }
         }
+
+        return $errors;
     }
-}
 
-return $errors;
-}
-
-/**
- * Mavjud potokni topish (guruhlar uchun)
- */
-public function findExistingPotok(array $groupIds, int $subjectId, int $academicYearId): ?Workload
-{
-    return Workload::where('subject_id', $subjectId)
-        ->where('academic_year_id', $academicYearId)
-        ->where('is_potok', true)
-        ->where('workload_type', 'lecture_only')
-        ->whereHas('groups', function ($query) use ($groupIds) {
-            $query->whereIn('groups.id', $groupIds);
-        })
-        ->first();
-}
+    /**
+     * Mavjud potokni topish (guruhlar uchun)
+     */
+    public function findExistingPotok(array $groupIds, int $subjectId, int $academicYearId): ?Workload
+    {
+        return Workload::where('subject_id', $subjectId)
+            ->where('academic_year_id', $academicYearId)
+            ->where('is_potok', true)
+            ->where('workload_type', 'lecture_only')
+            ->whereHas('groups', function ($query) use ($groupIds) {
+                $query->whereIn('groups.id', $groupIds);
+            })
+            ->first();
+    }
 }

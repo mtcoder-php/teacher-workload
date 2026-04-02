@@ -337,7 +337,6 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::delete('/{workload}', [WorkloadController::class, 'destroy'])->name('destroy');
         Route::post('/{workload}/remainder', [WorkloadController::class, 'createRemainder'])->name('create-remainder');
 
-
         // Tasdiqlash tizimi
         Route::post('/{workload}/submit',  [WorkloadApprovalController::class, 'submit']) ->name('submit');
         Route::post('/{workload}/approve', [WorkloadApprovalController::class, 'approve'])->name('approve');
@@ -377,7 +376,18 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     */
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
 
-        // Users Management
+        // ── Import ──────────────────────────────────────────────────────────
+        Route::prefix('import')->name('import.')->group(function () {
+            Route::get('/',                  [\App\Http\Controllers\ImportController::class, 'index'])           ->name('index');
+            Route::post('/directions',       [\App\Http\Controllers\ImportController::class, 'directions'])      ->name('directions');
+            Route::post('/groups',           [\App\Http\Controllers\ImportController::class, 'groups'])          ->name('groups');
+            Route::post('/teachers',         [\App\Http\Controllers\ImportController::class, 'teachers'])        ->name('teachers');
+            Route::post('/subjects',         [\App\Http\Controllers\ImportController::class, 'subjects'])        ->name('subjects');
+            Route::get('/sample/directions', [\App\Http\Controllers\ImportController::class, 'sampleDirections'])->name('sample.directions');
+            Route::get('/sample/groups',     [\App\Http\Controllers\ImportController::class, 'sampleGroups'])    ->name('sample.groups');
+            Route::get('/sample/teachers',   [\App\Http\Controllers\ImportController::class, 'sampleTeachers'])  ->name('sample.teachers');
+            Route::get('/sample/subjects',   [\App\Http\Controllers\ImportController::class, 'sampleSubjects'])  ->name('sample.subjects');
+        });
         Route::prefix('users')->name('users.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('create');
