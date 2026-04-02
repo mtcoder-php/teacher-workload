@@ -199,134 +199,6 @@ class WorkloadController extends Controller
     }
 
     /**
-     * AJAX: Fan soatlarini yuklash — guruh bo'yicha mustaqil hisoblash
-     *
-     * Mantiq:
-     *   Har bir guruh uchun limit = fan soatlari (mustaqil)
-     *   Sarflangan = faqat SHU guruhga berilgan soatlar
-     *   Qolgan = fan soati - shu guruhga berilgan soat
-     *
-     * GET /workloads/ajax/subject/{subjectId}/details
-     *   ?academic_year_id=1
-     *   &group_ids[]=5&group_ids[]=6    ← tanlangan guruhlar
-     */
-    public function getSubjectDetails(Request $request, $subjectId)
-    {
-        try {
-            $subject        = Subject::findOrFail($subjectId);
-            $academicYearId = $request->input('academic_year_id')
-                ?? AcademicYear::where('is_active', true)->value('id');
-
-            $query = Workload::where('subject_id', $subjectId)
-                ->where('academic_year_id', $academicYearId);
-
-            // Edit paytida bu yuklamaning o'z soatlarini chiqarib tashlaymiz
-            if ($excludeId = $request->input('exclude_workload_id')) {
-                $query->where('id', '!=', (int)$excludeId);
-            }
-
-            // Agar group_ids berilgan bo'lsa — faqat shu guruhlarga tegishli yuklamalarni hisoblaymiz
-            // Bu potoksiz yuklama yaratishda to'g'ri remaining ni olish uchun zarur
-            $groupIds = $request->input('group_ids', []);
-            if (!empty($groupIds)) {
-                $query->whereHas('groups', function ($q) use ($groupIds) {
-                    $q->whereIn('groups.id', $groupIds);
-                });
-            }
-
-            $dist = $query->selectRaw('
-                COALESCE(SUM(semester_1_lecture),0)    as s1_lec,
-                COALESCE(SUM(semester_1_practical),0)  as s1_pra,
-                COALESCE(SUM(semester_1_laboratory),0) as s1_lab,
-                COALESCE(SUM(semester_1_seminar),0)    as s1_sem,
-                COALESCE(SUM(semester_1_practice),0)   as s1_prc,
-                COALESCE(SUM(semester_1_exam),0)       as s1_ex,
-                COALESCE(SUM(semester_1_test),0)       as s1_tst,
-                COALESCE(SUM(semester_2_lecture),0)    as s2_lec,
-                COALESCE(SUM(semester_2_practical),0)  as s2_pra,
-                COALESCE(SUM(semester_2_laboratory),0) as s2_lab,
-                COALESCE(SUM(semester_2_seminar),0)    as s2_sem,
-                COALESCE(SUM(semester_2_practice),0)   as s2_prc,
-                COALESCE(SUM(semester_2_exam),0)       as s2_ex,
-                COALESCE(SUM(semester_2_test),0)       as s2_tst,
-                COALESCE(SUM(coursework_hours),0)      as cw,
-                COALESCE(SUM(diploma_hours),0)         as dip,
-                COALESCE(SUM(consultation_hours),0)    as con
-            ')->first();
-
-            $map = [
-                'semester_1_lecture'    => 's1_lec',
-                'semester_1_practical'  => 's1_pra',
-                'semester_1_laboratory' => 's1_lab',
-                'semester_1_seminar'    => 's1_sem',
-                'semester_1_practice'   => 's1_prc',
-                'semester_1_exam'       => 's1_ex',
-                'semester_1_test'       => 's1_tst',
-                'semester_2_lecture'    => 's2_lec',
-                'semester_2_practical'  => 's2_pra',
-                'semester_2_laboratory' => 's2_lab',
-                'semester_2_seminar'    => 's2_sem',
-                'semester_2_practice'   => 's2_prc',
-                'semester_2_exam'       => 's2_ex',
-                'semester_2_test'       => 's2_tst',
-                'coursework_hours'      => 'cw',
-                'diploma_hours'         => 'dip',
-                'consultation_hours'    => 'con',
-            ];
-
-            $remainingHours = [];
-            $maxHours       = [];
-            foreach ($map as $field => $distKey) {
-                $max                    = (float)($subject->{$field} ?? 0);
-                $used                   = (float)($dist->{$distKey} ?? 0);
-                $maxHours[$field]       = $max;
-                $remainingHours[$field] = max(0, $max - $used);
-            }
-
-            // Fan to'liq taqsimlangan bo'lsa is_fully_used = true
-            $isFullyUsed = collect($remainingHours)->every(fn($v) => $v == 0)
-                && collect($maxHours)->some(fn($v) => $v > 0);
-
-            return response()->json([
-                'success'         => true,
-                'max_hours'       => $maxHours,
-                'remaining_hours' => $remainingHours,
-                'is_fully_used'   => $isFullyUsed,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('getSubjectDetails: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        }
-    }
-
-
-    /**
-     * AJAX: Guruhlar holati
-     * POST /workloads/ajax/check-groups-status
-     */
-    public function checkGroupsStatus(Request $request)
-    {
-        try {
-            $groupIds       = $request->input('group_ids', []);
-            $subjectId      = $request->input('subject_id');
-            $academicYearId = $request->input('academic_year_id');
-
-            if (empty($groupIds) || !$subjectId || !$academicYearId) {
-                return response()->json(['success' => false, 'message' => 'Parametrlar to\'liq emas'], 400);
-            }
-
-            $results = $this->validationService->checkMultipleGroupsStatus(
-                $groupIds, $subjectId, $academicYearId
-            );
-
-            return response()->json(['success' => true, 'data' => $results]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Xatolik'], 500);
-        }
-    }
-
-    /**
      * Yuklamani ko'rsatish
      */
     public function show(Workload $workload)
@@ -674,49 +546,87 @@ class WorkloadController extends Controller
 // Route: GET /workloads/ajax/rating-status
 
     /**
-     * AJAX: Bu guruhlar + fan uchun reyting allaqachon berilganmi?
-     * GET /workloads/ajax/rating-status?subject_id=X&group_ids[]=1&group_ids[]=2
+     * Bulk action: bir nechta yuklamani bir manda o'zgartirish
+     * POST /workloads/bulk-action
+     * { ids: [1,2,3], action: 'submit'|'approve'|'reject' }
      */
-    public function getRatingStatus(Request $request)
+    public function bulkAction(Request $request)
     {
-        $subjectId      = $request->input('subject_id');
-        $groupIds       = $request->input('group_ids', []);
-        $academicYearId = $request->input('academic_year_id');
+        $request->validate([
+            'ids'    => 'required|array|min:1',
+            'ids.*'  => 'integer|exists:workloads,id',
+            'action' => 'required|in:submit,approve,reject',
+        ]);
 
-        if (!$subjectId || empty($groupIds)) {
-            return response()->json([
-                'success'     => true,
-                'is_assigned' => false,
-                'assigned_to' => null,
-            ]);
+        $user    = Auth::user();
+        $ids     = $request->input('ids');
+        $action  = $request->input('action');
+
+        $workloads = Workload::whereIn('id', $ids)->get();
+
+        $success = 0;
+        $skipped = 0;
+
+        foreach ($workloads as $workload) {
+            try {
+                match ($action) {
+                    'submit'  => $this->bulkSubmit($workload, $user),
+                    'approve' => $this->bulkApprove($workload, $user),
+                    'reject'  => $this->bulkReject($workload, $user),
+                };
+                $success++;
+            } catch (\Exception $e) {
+                $skipped++;
+            }
         }
 
-        if (!$academicYearId) {
-            $academicYearId = AcademicYear::where('is_active', true)->value('id');
+        $msg = match ($action) {
+            'submit'  => "tekshiruvga yuborildi",
+            'approve' => "tasdiqlandi",
+            'reject'  => "qaytarildi",
+        };
+
+        $flash = "{$success} ta yuklama {$msg}";
+        if ($skipped > 0) $flash .= ", {$skipped} ta o'tkazib yuborildi";
+
+        return back()->with('success', $flash);
+    }
+
+    private function bulkSubmit(Workload $workload, $user): void
+    {
+        if ($workload->status !== 'draft') throw new \Exception('Not draft');
+
+        if (!$user->isAdmin()) {
+            $isOwnDept = $user->isDepartmentHead()
+                && $user->teacher?->department_id === $workload->department_id;
+            if (!$isOwnDept) throw new \Exception('No permission');
         }
 
-        // Bu guruhlardan BIRORTASIDA shu fan uchun has_rating = true yuklama bormi?
-        // group_ids[] ichidan birortasi workload_groups jadvalida has_rating=true yuklamaga tegishlimi?
-        $assigned = Workload::where('subject_id', $subjectId)
-            ->where('academic_year_id', $academicYearId)
-            ->where('has_rating', true)
-            ->whereHas('groups', function ($q) use ($groupIds) {
-                $q->whereIn('groups.id', $groupIds);
-            })
-            ->with('teacher.user')
-            ->first();
+        $workload->update(['status' => 'pending']);
+    }
 
-        return response()->json([
-            'success'     => true,
-            'is_assigned' => $assigned !== null,
-            'assigned_to' => $assigned?->teacher?->user?->name,
+    private function bulkApprove(Workload $workload, $user): void
+    {
+        if (!$user->isAdmin()) throw new \Exception('Not admin');
+        if ($workload->status !== 'pending') throw new \Exception('Not pending');
+
+        $workload->update([
+            'status'      => 'confirmed',
+            'approved_by' => $user->id,
+            'approved_at' => now(),
         ]);
     }
 
+    private function bulkReject(Workload $workload, $user): void
+    {
+        if (!$user->isAdmin()) throw new \Exception('Not admin');
+        if ($workload->status !== 'pending') throw new \Exception('Not pending');
 
-
-
-
-
+        $workload->update([
+            'status'      => 'draft',
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+    }
 
 }

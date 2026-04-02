@@ -11,6 +11,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\WorkloadController;
+use App\Http\Controllers\WorkloadAjaxController;
+use App\Http\Controllers\WorkloadApprovalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -316,8 +318,9 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 
 // AJAX endpoints - auth required
     Route::middleware(['auth'])->prefix('workloads/ajax')->name('workloads.ajax.')->group(function () {
-        Route::get('/subject/{subjectId}/details', [WorkloadController::class, 'getSubjectDetails'])->name('subject-details');
-        Route::post('/check-groups-status', [WorkloadController::class, 'checkGroupsStatus'])->name('check-groups-status');
+        Route::get('/subject/{subjectId}/details', [WorkloadAjaxController::class, 'subjectDetails'])->name('subject-details');
+        Route::post('/check-groups-status',        [WorkloadAjaxController::class, 'checkGroupsStatus'])->name('check-groups-status');
+        Route::get('/rating-status',               [WorkloadAjaxController::class, 'ratingStatus'])->name('rating-status');
     });
 
 // Main workload routes
@@ -336,11 +339,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 
 
         // Tasdiqlash tizimi
-        Route::post('/{workload}/submit',  [WorkloadController::class, 'submit']) ->name('submit');
-        Route::post('/{workload}/approve', [WorkloadController::class, 'approve'])->name('approve');
-        Route::post('/{workload}/reject',  [WorkloadController::class, 'reject']) ->name('reject');
-
-        Route::get('/ajax/rating-status', [WorkloadController::class, 'getRatingStatus']);
+        Route::post('/{workload}/submit',  [WorkloadApprovalController::class, 'submit']) ->name('submit');
+        Route::post('/{workload}/approve', [WorkloadApprovalController::class, 'approve'])->name('approve');
+        Route::post('/{workload}/reject',  [WorkloadApprovalController::class, 'reject']) ->name('reject');
+        Route::post('/bulk-action',        [WorkloadApprovalController::class, 'bulkAction'])->name('bulk-action');
     });
 
 
