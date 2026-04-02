@@ -118,9 +118,7 @@
                     </div>
                     <div class="px-4 py-2 flex gap-6 text-xs text-gray-500 bg-white">
                         <span>Fan soati: <strong class="text-gray-700">{{ subjectTotal }}</strong></span>
-                        <span>Bu guruhga berilgan: <strong class="text-amber-600">{{
-                                alreadyDistributed
-                            }}</strong></span>
+                        <span>Bu guruhga berilgan: <strong class="text-amber-600">{{ alreadyDistributed }}</strong></span>
                         <span>Qolgan: <strong :class="remainingTotal > 0 ? 'text-green-600' : 'text-red-500'">
               {{ remainingTotal }}
             </strong></span>
@@ -147,7 +145,7 @@
                     <span class="text-xs text-gray-400">{{ remainingTotal }} soat qolgan</span>
                 </div>
 
-                <!-- ── Soat inputlari (faqat to'liq taqsimlanmagan bo'lsa) ─ -->
+                <!-- ── Soat inputlari ─────────────────────────────────── -->
                 <template v-if="!fullyDistributedWarning">
 
                     <!-- 1-semestr -->
@@ -159,15 +157,14 @@
                             <span class="text-xs text-gray-400">(Fan: {{ sem1SubjectTotal }} soat)</span>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <!-- 1-semestr -->
                             <HourField
                                 v-for="f in semester1Fields"
                                 :key="f.key"
                                 :label="f.label"
                                 v-model="local[f.key]"
-                                :subject-max="subjectHours[f.key]"
-                                :remaining="remainingHours[f.key]"
-                                :disabled="(subjectHours[f.key] ?? 0) === 0 || (local.is_potok && !f.key.includes('lecture'))"
+                                :subject-max="subjectHours[f.key] ?? 0"
+                                :remaining="remainingHours[f.key] ?? 0"
+                                :disabled="local.is_potok && !f.key.includes('lecture')"
                             />
                         </div>
                     </div>
@@ -181,15 +178,14 @@
                             <span class="text-xs text-gray-400">(Fan: {{ sem2SubjectTotal }} soat)</span>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <!-- 1-semestr -->
                             <HourField
-                                v-for="f in semester1Fields"
+                                v-for="f in semester2Fields"
                                 :key="f.key"
                                 :label="f.label"
                                 v-model="local[f.key]"
-                                :subject-max="subjectHours[f.key]"
-                                :remaining="remainingHours[f.key]"
-                                :disabled="(subjectHours[f.key] ?? 0) === 0 || (local.is_potok && !f.key.includes('lecture'))"
+                                :subject-max="subjectHours[f.key] ?? 0"
+                                :remaining="remainingHours[f.key] ?? 0"
+                                :disabled="local.is_potok && !f.key.includes('lecture')"
                             />
                         </div>
                     </div>
@@ -198,22 +194,19 @@
                     <div v-if="hasExtraHours">
                         <h4 class="text-sm font-semibold text-gray-700 mb-3">Qo'shimcha soatlar</h4>
                         <div class="grid grid-cols-3 gap-3">
-                            <!-- 1-semestr -->
                             <HourField
-                                v-for="f in semester1Fields"
+                                v-for="f in extraFields"
                                 :key="f.key"
                                 :label="f.label"
                                 v-model="local[f.key]"
-                                :subject-max="subjectHours[f.key]"
-                                :remaining="remainingHours[f.key]"
-                                :disabled="(subjectHours[f.key] ?? 0) === 0 || (local.is_potok && !f.key.includes('lecture'))"
+                                :subject-max="subjectHours[f.key] ?? 0"
+                                :remaining="remainingHours[f.key] ?? 0"
                             />
                         </div>
                     </div>
-                    <!-- ─── REYTING QISMI ────────────────────────────────────────────────── -->
-                    <div class="rounded-xl border overflow-hidden" :class="ratingBorderClass">
 
-                        <!-- Sarlavha -->
+                    <!-- ─── REYTING QISMI ─────────────────────────────── -->
+                    <div class="rounded-xl border overflow-hidden" :class="ratingBorderClass">
                         <div class="px-4 py-3 flex items-center justify-between" :class="ratingBgClass">
                             <div class="flex items-center gap-3">
                                 <span class="text-lg">⭐</span>
@@ -225,8 +218,6 @@
                                     </p>
                                 </div>
                             </div>
-
-                            <!-- Checkbox -->
                             <label
                                 class="flex items-center gap-2 cursor-pointer select-none"
                                 :class="{ 'opacity-50 cursor-not-allowed': ratingStatus.is_assigned }"
@@ -242,8 +233,6 @@
             </span>
                             </label>
                         </div>
-
-                        <!-- Allaqachon berilgan holat -->
                         <div v-if="ratingStatus.is_assigned" class="px-4 py-2 bg-red-50 border-t border-red-200">
                             <p class="text-xs text-red-600 flex items-center gap-1.5">
                                 <span>🚫</span>
@@ -252,8 +241,6 @@
                                 ga berilgan
                             </p>
                         </div>
-
-                        <!-- Reyting beriladi holat -->
                         <div v-else-if="local.has_rating" class="px-4 py-2 bg-green-50 border-t border-green-200">
                             <p class="text-xs text-green-700 flex items-center gap-1.5">
                                 <span>✅</span>
@@ -262,8 +249,8 @@
                                 reyting beriladi
                             </p>
                         </div>
-
                     </div>
+
                     <!-- Potok eslatma -->
                     <div v-if="local.is_potok"
                          class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
@@ -313,52 +300,51 @@ const isLoadingRating = ref(false)
 const ratingAssigned   = ref(false)
 const ratingAssignedTo = ref(null)
 
-// Talabalar soni va reyting — props.groups dan hisoblash
 const ratingStatus = computed(() => {
     const groupIds = local.value.group_ids ?? []
-
     const totalStudents = groupIds.reduce((sum, id) => {
         const g = props.groups.find(g => g.id === id)
         return sum + (g?.student_count ?? 0)
     }, 0)
-
     return {
         total_students: totalStudents,
         rating:         Math.floor(totalStudents / 2),
         is_assigned:    ratingAssigned.value,
-        assigned_to:    ratingAssignedTo.value,     // ← QO'SHING
+        assigned_to:    ratingAssignedTo.value,
         can_assign:     totalStudents > 0 && !ratingAssigned.value,
     }
 })
 
 // ─── Soat maydonlari ──────────────────────────────────────────────────────────
 const semester1Fields = [
-    {key: 'semester_1_lecture', label: 'Ma\'ruza'},
-    {key: 'semester_1_practical', label: 'Amaliy'},
+    {key: 'semester_1_lecture',    label: "Ma'ruza"},
+    {key: 'semester_1_practical',  label: 'Amaliy'},
     {key: 'semester_1_laboratory', label: 'Laboratoriya'},
-    {key: 'semester_1_seminar', label: 'Seminar'},
-    {key: 'semester_1_practice', label: 'Amaliyot'},
-    {key: 'semester_1_exam', label: 'Imtihon'},
-    {key: 'semester_1_test', label: 'Sinov'},
+    {key: 'semester_1_seminar',    label: 'Seminar'},
+    {key: 'semester_1_practice',   label: 'Amaliyot'},
+    {key: 'semester_1_exam',       label: 'Imtihon'},
+    {key: 'semester_1_test',       label: 'Sinov'},
 ]
 const semester2Fields = [
-    {key: 'semester_2_lecture', label: 'Ma\'ruza'},
-    {key: 'semester_2_practical', label: 'Amaliy'},
+    {key: 'semester_2_lecture',    label: "Ma'ruza"},
+    {key: 'semester_2_practical',  label: 'Amaliy'},
     {key: 'semester_2_laboratory', label: 'Laboratoriya'},
-    {key: 'semester_2_seminar', label: 'Seminar'},
-    {key: 'semester_2_practice', label: 'Amaliyot'},
-    {key: 'semester_2_exam', label: 'Imtihon'},
-    {key: 'semester_2_test', label: 'Sinov'},
+    {key: 'semester_2_seminar',    label: 'Seminar'},
+    {key: 'semester_2_practice',   label: 'Amaliyot'},
+    {key: 'semester_2_exam',       label: 'Imtihon'},
+    {key: 'semester_2_test',       label: 'Sinov'},
 ]
 const extraFields = [
-    {key: 'coursework_hours', label: 'Kurs ishi'},
-    {key: 'diploma_hours', label: 'Diplom ishi'},
+    {key: 'coursework_hours',   label: 'Kurs ishi'},
+    {key: 'diploma_hours',      label: 'Diplom ishi'},
     {key: 'consultation_hours', label: 'Konsultatsiya'},
 ]
 const allFields = [...semester1Fields, ...semester2Fields, ...extraFields]
+
 function totalSubjectHours(s) {
     return allFields.reduce((sum, f) => sum + (Number(s[f.key]) || 0), 0)
 }
+
 // ─── Fan qidiruvi ─────────────────────────────────────────────────────────────
 const filteredSubjects = computed(() => {
     const q = subjectSearch.value.toLowerCase()
@@ -386,55 +372,41 @@ async function selectSubject(subject) {
     emit('subject-loaded', subject)
 
     if (isNew) {
-        allFields.forEach(f => {
-            local.value[f.key] = 0
-        })
+        allFields.forEach(f => { local.value[f.key] = 0 })
         local.value.has_rating = false
         await loadAndFill(subject.id)
     } else {
         await loadLimitsOnly(subject.id)
     }
-
     await checkRatingAssigned()
 }
 
-// ─── Server: bu guruhlar + fan uchun reyting berilganmi? ─────────────────────
+// ─── Reyting tekshiruvi ───────────────────────────────────────────────────────
 async function checkRatingAssigned() {
     const subjectId = local.value.subject_id
     const groupIds = local.value.group_ids ?? []
-
     if (!subjectId || groupIds.length === 0) {
         ratingAssigned.value = false
         return
     }
-
     isLoadingRating.value = true
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
         const params = new URLSearchParams()
         params.set('subject_id', subjectId)
         groupIds.forEach(id => params.append('group_ids[]', id))
-        if (local.value.academic_year_id) {
-            params.set('academic_year_id', local.value.academic_year_id)
-        }
+        if (local.value.academic_year_id) params.set('academic_year_id', local.value.academic_year_id)
 
         const res = await fetch(`/workloads/ajax/rating-status?${params}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
+            headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
             credentials: 'same-origin',
         })
-
         if (res.ok) {
             const json = await res.json()
             if (json.success) {
                 ratingAssigned.value   = json.is_assigned ?? false
                 ratingAssignedTo.value = json.assigned_to ?? null
-                if (ratingAssigned.value) {
-                    local.value.has_rating = false
-                }
+                if (ratingAssigned.value) local.value.has_rating = false
             }
         }
     } catch (_) {
@@ -444,15 +416,15 @@ async function checkRatingAssigned() {
     }
 }
 
-// ─── Yangi fan: yuklash + avtomatik to'ldirish ───────────────────────────────
+// ─── Soat yuklash ─────────────────────────────────────────────────────────────
 async function loadAndFill(subjectId) {
     isLoading.value = true
     try {
         const data = await fetchSubjectDetails(subjectId)
         if (data) {
-            subjectHours.value = data.max_hours
+            subjectHours.value   = data.max_hours
             remainingHours.value = data.remaining_hours
-            isFullyUsed.value = data.is_fully_used ?? false
+            isFullyUsed.value    = data.is_fully_used ?? false
             if (!isFullyUsed.value) fillFromRemaining()
         }
     } finally {
@@ -460,48 +432,37 @@ async function loadAndFill(subjectId) {
     }
 }
 
-// ─── Orqaga qaytganda: faqat limitlar ────────────────────────────────────────
 async function loadLimitsOnly(subjectId) {
     isLoading.value = true
     try {
         const data = await fetchSubjectDetails(subjectId)
         if (data) {
-            subjectHours.value = data.max_hours
+            subjectHours.value   = data.max_hours
             remainingHours.value = data.remaining_hours
-            isFullyUsed.value = data.is_fully_used ?? false
+            isFullyUsed.value    = data.is_fully_used ?? false
         }
     } finally {
         isLoading.value = false
     }
 }
 
-// ─── Server: soat limiti ──────────────────────────────────────────────────────
 async function fetchSubjectDetails(subjectId) {
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
         const params = new URLSearchParams()
-
-        if (local.value.academic_year_id) {
-            params.set('academic_year_id', local.value.academic_year_id)
-        }
+        if (local.value.academic_year_id) params.set('academic_year_id', local.value.academic_year_id)
         const groupIds = local.value.group_ids ?? []
         groupIds.forEach(id => params.append('group_ids[]', id))
 
         const res = await fetch(`/workloads/ajax/subject/${subjectId}/details?${params}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
+            headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
             credentials: 'same-origin',
         })
-
         if (res.ok) {
             const json = await res.json()
             if (json.success) return json
         }
-    } catch (_) { /* network xatosi */
-    }
+    } catch (_) {}
 
     // Fallback
     const s = props.subjects.find(x => x.id === subjectId)
@@ -517,7 +478,6 @@ async function fetchSubjectDetails(subjectId) {
     return null
 }
 
-// ─── Soatlarni to'ldirish ─────────────────────────────────────────────────────
 function fillFromRemaining() {
     allFields.forEach(f => {
         const rem = Number(remainingHours.value[f.key]) || 0
@@ -547,30 +507,36 @@ const enteredTotal = computed(() =>
     allFields.reduce((s, f) => s + (Number(local.value[f.key]) || 0), 0)
 )
 const distributionPercent = computed(() =>
-    subjectTotal.value > 0
-        ? Math.round((enteredTotal.value / subjectTotal.value) * 100)
-        : 0
+    subjectTotal.value > 0 ? Math.round((enteredTotal.value / subjectTotal.value) * 100) : 0
 )
-const hasSemester1Hours = computed(() =>
-    semester1Fields.some(f => (Number(subjectHours.value[f.key]) || 0) > 0)
+const sem1SubjectTotal = computed(() =>
+    semester1Fields.reduce((s, f) => s + (Number(subjectHours.value[f.key]) || 0), 0)
 )
-const hasSemester2Hours = computed(() =>
-    semester2Fields.some(f => (Number(subjectHours.value[f.key]) || 0) > 0)
+const sem2SubjectTotal = computed(() =>
+    semester2Fields.reduce((s, f) => s + (Number(subjectHours.value[f.key]) || 0), 0)
 )
+const hasSemester1Hours = computed(() => sem1SubjectTotal.value > 0)
+const hasSemester2Hours = computed(() => sem2SubjectTotal.value > 0)
 const hasExtraHours = computed(() =>
     extraFields.some(f => (Number(subjectHours.value[f.key]) || 0) > 0)
 )
+
+// To'liq taqsimlangan ogohlantirish
+const fullyDistributedWarning = computed(() =>
+    subjectTotal.value > 0 && remainingTotal.value === 0 && enteredTotal.value === 0
+)
+
 const hasOverLimit = computed(() =>
     allFields.some(f => {
-        const entered     = Number(local.value[f.key])           || 0
-        const maxLimit    = Number(remainingHours.value[f.key])  || 0
-        const subjectMax  = Number(subjectHours.value[f.key])    || 0
-        if (subjectMax === 0) return false  // fan uchun bu soat yo'q
-        return entered > maxLimit           // 0 dan oshsa ham xato
+        const entered    = Number(local.value[f.key])          || 0
+        const maxLimit   = Number(remainingHours.value[f.key]) || 0
+        const subjectMax = Number(subjectHours.value[f.key])   || 0
+        if (subjectMax === 0) return false
+        return entered > maxLimit
     })
 )
 
-// ─── Reyting stil computed ────────────────────────────────────────────────────
+// ─── Reyting stillar ──────────────────────────────────────────────────────────
 const ratingBorderClass = computed(() => {
     if (ratingStatus.value.is_assigned) return 'border-red-200'
     if (local.value.has_rating) return 'border-green-200'
@@ -589,48 +555,43 @@ const ratingTextClass = computed(() => {
 
 // ─── Status panel ─────────────────────────────────────────────────────────────
 const statusLabel = computed(() => {
-    if (hasOverLimit.value) return 'Limitdan oshib ketdi!'
-    if (distributionPercent.value === 100) return 'To\'liq taqsimlandi'
-    if (distributionPercent.value > 80) return 'Deyarli to\'liq'
-    if (distributionPercent.value > 0) return 'Qisman taqsimlandi'
+    if (hasOverLimit.value)                return 'Limitdan oshib ketdi!'
+    if (distributionPercent.value === 100) return "To'liq taqsimlandi"
+    if (distributionPercent.value > 80)   return 'Deyarli to\'liq'
+    if (distributionPercent.value > 0)    return 'Qisman taqsimlandi'
     return 'Soatlar kiritilmagan'
 })
 const statusIcon = computed(() => {
-    if (hasOverLimit.value) return '❌'
+    if (hasOverLimit.value)                return '❌'
     if (distributionPercent.value === 100) return '✅'
-    if (distributionPercent.value > 0) return '⏳'
+    if (distributionPercent.value > 0)    return '⏳'
     return '📋'
 })
 const statusBgClass = computed(() => {
-    if (hasOverLimit.value) return 'bg-red-50'
+    if (hasOverLimit.value)                return 'bg-red-50'
     if (distributionPercent.value === 100) return 'bg-green-50'
     return 'bg-blue-50'
 })
 const statusBorderClass = computed(() => {
-    if (hasOverLimit.value) return 'border-red-200'
+    if (hasOverLimit.value)                return 'border-red-200'
     if (distributionPercent.value === 100) return 'border-green-200'
     return 'border-blue-200'
 })
 const statusTextClass = computed(() => {
-    if (hasOverLimit.value) return 'text-red-700'
+    if (hasOverLimit.value)                return 'text-red-700'
     if (distributionPercent.value === 100) return 'text-green-700'
     return 'text-blue-700'
 })
 const progressBarClass = computed(() => {
-    if (hasOverLimit.value) return 'bg-red-500'
+    if (hasOverLimit.value)                return 'bg-red-500'
     if (distributionPercent.value === 100) return 'bg-green-500'
-    if (distributionPercent.value > 80) return 'bg-amber-400'
+    if (distributionPercent.value > 80)    return 'bg-amber-400'
     return 'bg-blue-500'
 })
 
 // ─── Validatsiya ──────────────────────────────────────────────────────────────
 watch(
-    () => [
-        local.value.subject_id,
-        enteredTotal.value,
-        hasOverLimit.value,
-        isFullyUsed.value,
-    ],
+    () => [local.value.subject_id, enteredTotal.value, hasOverLimit.value, isFullyUsed.value],
     () => {
         const ok = !!local.value.subject_id
             && enteredTotal.value > 0

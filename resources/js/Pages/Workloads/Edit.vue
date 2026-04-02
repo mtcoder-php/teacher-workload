@@ -418,9 +418,13 @@ async function loadHourLimits() {
 
 // ─── Potok: maydon disabled holati ───────────────────────────────────────────
 function isFieldDisabled(key) {
-    // Fan uchun bu maydon 0 bo'lsa — disable
-    if ((maxHours.value[key] ?? 0) === 0) return true
-    // Potok: faqat ma'ruza soatlari
+    const max       = Number(maxHours.value[key] ?? 0)
+    const remaining = Number(remainingHours.value[key] ?? 0)
+    // Fan uchun bu maydon belgilanmagan — disable
+    if (max === 0) return true
+    // Fan soati to'liq taqsimlangan — disable
+    if (remaining === 0) return true
+    // Potok: faqat ma'ruza soatlari ochiq
     if (props.workload.is_potok) {
         return !key.includes('lecture')
     }
@@ -432,7 +436,8 @@ function isOverLimit(key) {
     if (isFieldDisabled(key)) return false
     const entered  = Number(form[key]) || 0
     const limit    = Number(remainingHours.value[key]) || 0
-    if (limit === 0) return false
+    const max      = Number(maxHours.value[key]) || 0
+    if (max === 0) return false
     return entered > limit
 }
 

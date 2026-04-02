@@ -222,28 +222,37 @@ class WorkloadController extends Controller
 
             // Edit paytida bu yuklamaning o'z soatlarini chiqarib tashlaymiz
             if ($excludeId = $request->input('exclude_workload_id')) {
-                $query->where('id', '!=', $excludeId);
+                $query->where('id', '!=', (int)$excludeId);
+            }
+
+            // Agar group_ids berilgan bo'lsa — faqat shu guruhlarga tegishli yuklamalarni hisoblaymiz
+            // Bu potoksiz yuklama yaratishda to'g'ri remaining ni olish uchun zarur
+            $groupIds = $request->input('group_ids', []);
+            if (!empty($groupIds)) {
+                $query->whereHas('groups', function ($q) use ($groupIds) {
+                    $q->whereIn('groups.id', $groupIds);
+                });
             }
 
             $dist = $query->selectRaw('
-            COALESCE(SUM(semester_1_lecture),0)    as s1_lec,
-            COALESCE(SUM(semester_1_practical),0)  as s1_pra,
-            COALESCE(SUM(semester_1_laboratory),0) as s1_lab,
-            COALESCE(SUM(semester_1_seminar),0)    as s1_sem,
-            COALESCE(SUM(semester_1_practice),0)   as s1_prc,
-            COALESCE(SUM(semester_1_exam),0)       as s1_ex,
-            COALESCE(SUM(semester_1_test),0)       as s1_tst,
-            COALESCE(SUM(semester_2_lecture),0)    as s2_lec,
-            COALESCE(SUM(semester_2_practical),0)  as s2_pra,
-            COALESCE(SUM(semester_2_laboratory),0) as s2_lab,
-            COALESCE(SUM(semester_2_seminar),0)    as s2_sem,
-            COALESCE(SUM(semester_2_practice),0)   as s2_prc,
-            COALESCE(SUM(semester_2_exam),0)       as s2_ex,
-            COALESCE(SUM(semester_2_test),0)       as s2_tst,
-            COALESCE(SUM(coursework_hours),0)      as cw,
-            COALESCE(SUM(diploma_hours),0)         as dip,
-            COALESCE(SUM(consultation_hours),0)    as con
-        ')->first();
+                COALESCE(SUM(semester_1_lecture),0)    as s1_lec,
+                COALESCE(SUM(semester_1_practical),0)  as s1_pra,
+                COALESCE(SUM(semester_1_laboratory),0) as s1_lab,
+                COALESCE(SUM(semester_1_seminar),0)    as s1_sem,
+                COALESCE(SUM(semester_1_practice),0)   as s1_prc,
+                COALESCE(SUM(semester_1_exam),0)       as s1_ex,
+                COALESCE(SUM(semester_1_test),0)       as s1_tst,
+                COALESCE(SUM(semester_2_lecture),0)    as s2_lec,
+                COALESCE(SUM(semester_2_practical),0)  as s2_pra,
+                COALESCE(SUM(semester_2_laboratory),0) as s2_lab,
+                COALESCE(SUM(semester_2_seminar),0)    as s2_sem,
+                COALESCE(SUM(semester_2_practice),0)   as s2_prc,
+                COALESCE(SUM(semester_2_exam),0)       as s2_ex,
+                COALESCE(SUM(semester_2_test),0)       as s2_tst,
+                COALESCE(SUM(coursework_hours),0)      as cw,
+                COALESCE(SUM(diploma_hours),0)         as dip,
+                COALESCE(SUM(consultation_hours),0)    as con
+            ')->first();
 
             $map = [
                 'semester_1_lecture'    => 's1_lec',
@@ -274,10 +283,15 @@ class WorkloadController extends Controller
                 $remainingHours[$field] = max(0, $max - $used);
             }
 
+            // Fan to'liq taqsimlangan bo'lsa is_fully_used = true
+            $isFullyUsed = collect($remainingHours)->every(fn($v) => $v == 0)
+                && collect($maxHours)->some(fn($v) => $v > 0);
+
             return response()->json([
                 'success'         => true,
                 'max_hours'       => $maxHours,
                 'remaining_hours' => $remainingHours,
+                'is_fully_used'   => $isFullyUsed,
             ]);
 
         } catch (\Exception $e) {
