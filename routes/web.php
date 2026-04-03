@@ -318,9 +318,9 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 
 // AJAX endpoints - auth required
     Route::middleware(['auth'])->prefix('workloads/ajax')->name('workloads.ajax.')->group(function () {
-        Route::get('/subject/{subjectId}/details', [WorkloadAjaxController::class, 'subjectDetails'])->name('subject-details');
+        Route::get('/subject/{subjectId}/details', [WorkloadAjaxController::class, 'subjectDetails'])  ->name('subject-details');
         Route::post('/check-groups-status',        [WorkloadAjaxController::class, 'checkGroupsStatus'])->name('check-groups-status');
-        Route::get('/rating-status',               [WorkloadAjaxController::class, 'ratingStatus'])->name('rating-status');
+        Route::get('/rating-status',               [WorkloadAjaxController::class, 'ratingStatus'])    ->name('rating-status');
     });
 
 // Main workload routes
@@ -337,7 +337,12 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::delete('/{workload}', [WorkloadController::class, 'destroy'])->name('destroy');
         Route::post('/{workload}/remainder', [WorkloadController::class, 'createRemainder'])->name('create-remainder');
 
+
         // Tasdiqlash tizimi
+        Route::post('/{workload}/submit',  [WorkloadController::class, 'submit']) ->name('submit');
+        Route::post('/{workload}/approve', [WorkloadController::class, 'approve'])->name('approve');
+        Route::post('/{workload}/reject',  [WorkloadController::class, 'reject']) ->name('reject');
+
         Route::post('/{workload}/submit',  [WorkloadApprovalController::class, 'submit']) ->name('submit');
         Route::post('/{workload}/approve', [WorkloadApprovalController::class, 'approve'])->name('approve');
         Route::post('/{workload}/reject',  [WorkloadApprovalController::class, 'reject']) ->name('reject');
@@ -351,22 +356,13 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('permission:reports.view')->prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [ReportController::class, 'index'])->name('index');
-
-        // O'qituvchi bo'yicha hisobot
-        Route::get('/teacher/{teacher}', [ReportController::class, 'teacher'])->name('teacher');
-
-        // Kafedra bo'yicha hisobot
-        Route::get('/department/{department}', [ReportController::class, 'department'])->name('department');
-
-        // Fakultet bo'yicha hisobot
-        Route::get('/faculty/{faculty}', [ReportController::class, 'faculty'])->name('faculty');
-
-        // Export
-        Route::middleware('permission:reports.export')->group(function () {
-            Route::get('/export/excel', [ReportController::class, 'exportExcel'])->name('export.excel');
-            Route::get('/export/pdf', [ReportController::class, 'exportPdf'])->name('export.pdf');
-        });
+        Route::get('/',                               [ReportController::class, 'index'])            ->name('index');
+        Route::get('/teacher/{teacher}',              [ReportController::class, 'teacher'])          ->name('teacher');
+        Route::get('/department/{department}',        [ReportController::class, 'department'])       ->name('department');
+        Route::get('/faculty/{faculty}',              [ReportController::class, 'faculty'])          ->name('faculty');
+        Route::get('/export/department/{department}', [ReportController::class, 'exportDepartment'])->name('export.department');
+        Route::get('/export/faculty/{faculty}',       [ReportController::class, 'exportFaculty'])   ->name('export.faculty');
+        Route::get('/export/teacher/{teacher}',       [ReportController::class, 'exportTeacher'])   ->name('export.teacher');
     });
 
     /*

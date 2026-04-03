@@ -1,244 +1,217 @@
 <template>
-
-    <Head :title="`${teacher.full_name} - Hisobot`" />
-
     <AuthenticatedLayout>
-        <template #header>O'qituvchi hisoboti</template>
+        <template #header>O'qituvchi Hisoboti</template>
 
-        <div class="space-y-6">
-            <!-- Teacher Info Card -->
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-sm overflow-hidden">
-                <div class="px-6 py-8 text-white">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 class="text-3xl font-bold">{{ teacher.full_name }}</h2>
-                            <p class="text-blue-100 mt-1">{{ teacher.position }}</p>
-                            <p class="text-blue-100">{{ teacher.department?.name }}</p>
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Boshqaruv paneli -->
+            <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center
+                                    text-blue-600 font-bold text-lg flex-shrink-0">
+                            {{ teacher.name?.charAt(0)?.toUpperCase() }}
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <button v-if="canExport" @click="exportExcel"
-                                class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition">
-                                Excel
-                            </button>
-                            <button v-if="canExport" @click="exportPdf"
-                                class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition">
-                                PDF
-                            </button>
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">{{ teacher.name }}</h2>
+                            <p class="text-sm text-gray-500">
+                                {{ teacher.position }}
+                                <span v-if="teacher.degree"> · {{ teacher.degree }}</span>
+                                <span v-if="teacher.department"> · {{ teacher.department }}</span>
+                            </p>
                         </div>
                     </div>
-
-                    <!-- Semester Filter -->
-                    <select v-model="currentSemester" @change="changeSemester"
-                        class="px-4 py-2 pr-10 text-gray-900 rounded-lg focus:ring-2 focus:ring-white appearance-none bg-white">
-                        <option :value="null">Joriy semestr</option>
-                        <option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-                            {{ semester.name }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Statistics Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-blue-600 mb-1">Jami soatlar</p>
-                            <p class="text-3xl font-bold text-blue-900">{{ stats.total_hours }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-3">
+                        <select v-model="selectedYear" @change="reload"
+                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option v-for="y in academicYears" :key="y.id" :value="y.id">
+                                {{ y.name }}{{ y.is_active ? ' ✓' : '' }}
+                            </option>
+                        </select>
+                        <a :href="exportUrl"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white
+                                  rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-green-600 mb-1">Fanlar soni</p>
-                            <p class="text-3xl font-bold text-green-900">{{ stats.total_subjects }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-purple-600 mb-1">Guruhlar soni</p>
-                            <p class="text-3xl font-bold text-purple-900">{{ stats.total_groups }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-sm border border-indigo-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-indigo-600 mb-1">Ma'ruza soatlari</p>
-                            <p class="text-3xl font-bold text-indigo-900">{{ stats.lecture_hours }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-indigo-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
+                            Excel
+                        </a>
+                        <Link :href="route('reports.index')"
+                              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                            ← Orqaga
+                        </Link>
                     </div>
                 </div>
             </div>
 
-            <!-- Workloads Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-xl font-semibold text-gray-800">Yuklama tafsilotlari</h2>
+            <!-- Statistika kartalar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                    <p class="text-2xl font-bold text-blue-600">{{ auditoria }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Auditoriya soati</p>
                 </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                    <p class="text-2xl font-bold text-green-600">{{ totals.total }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Umumiy yuklama</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                    <p class="text-2xl font-bold text-purple-600">{{ totals.rating }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Reyting soati</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                    <p class="text-2xl font-bold text-orange-600">{{ rows.length }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Fanlar soni</p>
+                </div>
+            </div>
+
+            <!-- Jadval -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    #
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fan
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Guruh
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Ma'ruza</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Seminar</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Amaliy</th>
-
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Imtihon</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Jami
-                                </th>
-                            </tr>
+                    <table class="min-w-full text-xs border-collapse">
+                        <thead>
+                        <tr class="bg-blue-900 text-white">
+                            <th rowspan="2" class="px-3 py-3 text-left border border-blue-700 min-w-36">FAN NOMI</th>
+                            <th rowspan="2" class="px-2 py-3 text-left border border-blue-700 min-w-24">YO'NALISH</th>
+                            <th rowspan="2" class="px-2 py-3 text-center border border-blue-700 min-w-20">GURUHLAR</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-10">KURS</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-12">TALABA</th>
+                            <th colspan="5" class="px-2 py-2 text-center border border-blue-700 bg-blue-800">1-SEMESTR</th>
+                            <th colspan="5" class="px-2 py-2 text-center border border-blue-700 bg-blue-700">2-SEMESTR</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-12">KURS ISHI</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-12">DIPLOM</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-12">KONSUL.</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-12">REYTING</th>
+                            <th rowspan="2" class="px-2 py-3 text-center border border-blue-700 w-14 bg-blue-600">JAMI</th>
+                            <th rowspan="2" class="px-1 py-3 text-center border border-blue-700 w-16">HOLAT</th>
+                        </tr>
+                        <tr class="bg-blue-800 text-white text-center">
+                            <th class="px-1 py-2 border border-blue-700 w-10">Ma'r</th>
+                            <th class="px-1 py-2 border border-blue-700 w-10">Aml</th>
+                            <th class="px-1 py-2 border border-blue-700 w-10">Lab</th>
+                            <th class="px-1 py-2 border border-blue-700 w-10">Sem</th>
+                            <th class="px-1 py-2 border border-blue-700 w-10">Aml-t</th>
+                            <th class="px-1 py-2 border border-blue-600 w-10">Ma'r</th>
+                            <th class="px-1 py-2 border border-blue-600 w-10">Aml</th>
+                            <th class="px-1 py-2 border border-blue-600 w-10">Lab</th>
+                            <th class="px-1 py-2 border border-blue-600 w-10">Sem</th>
+                            <th class="px-1 py-2 border border-blue-600 w-10">Aml-t</th>
+                        </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(workload, index) in workloads" :key="workload.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ index + 1 }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ workload.subject.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ workload.subject.code }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ workload.group.name }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ workload.lecture_hours }}
-                                 </td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ workload.seminar_hours }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{
-                                    workload.practical_hours }}
-                                </td>
-                              
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ workload.exam_hours }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="font-semibold text-indigo-600">{{ workload.total_hours }}</span>
-                                </td>
-                            </tr>
+                        <tbody class="divide-y divide-gray-100">
+                        <tr v-for="(row, i) in rows" :key="i"
+                            class="hover:bg-gray-50"
+                            :class="i % 2 === 0 ? 'bg-white' : 'bg-blue-50/20'">
+                            <td class="px-3 py-2.5 font-medium text-gray-900 border-r border-gray-200">
+                                {{ row.subject }}
+                                <span v-if="row.is_potok" class="ml-1 px-1 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">Potok</span>
+                            </td>
+                            <td class="px-2 py-2.5 text-gray-600 border-r border-gray-200">{{ row.direction }}</td>
+                            <td class="px-2 py-2.5 text-gray-600 border-r border-gray-200">{{ row.groups }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.course }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.students }}</td>
+                            <!-- 1-semestr -->
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100">{{ row.s1_lecture || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100">{{ row.s1_practical || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100">{{ row.s1_laboratory || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100">{{ row.s1_seminar || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.s1_practice || '' }}</td>
+                            <!-- 2-semestr -->
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100 bg-blue-50/30">{{ row.s2_lecture || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100 bg-blue-50/30">{{ row.s2_practical || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100 bg-blue-50/30">{{ row.s2_laboratory || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-100 bg-blue-50/30">{{ row.s2_seminar || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200 bg-blue-50/30">{{ row.s2_practice || '' }}</td>
+                            <!-- Qo'shimcha -->
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.coursework || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.diploma || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.consultation || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200">{{ row.rating || '' }}</td>
+                            <td class="px-1 py-2.5 text-center border-r border-gray-200 font-bold text-blue-700">{{ row.total }}</td>
+                            <td class="px-2 py-2.5 text-center">
+                                    <span class="px-1.5 py-0.5 rounded-full text-xs font-medium"
+                                          :class="statusClass(row.status)">
+                                        {{ statusLabel(row.status) }}
+                                    </span>
+                            </td>
+                        </tr>
 
-                            <!-- Total Row -->
-                            <tr class="bg-indigo-50 font-semibold">
-                                <td colspan="3" class="px-6 py-4 text-right text-gray-900">JAMI:</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ stats.lecture_hours }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ stats.seminar_hours }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ stats.practical_hours }}</td>                                
-                                <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ stats.exam_hours }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-indigo-600 text-lg">{{ stats.total_hours }}</span>
-                                </td>
-                            </tr>
+                        <tr v-if="!rows.length">
+                            <td colspan="22" class="px-6 py-12 text-center text-gray-400">
+                                Bu o'quv yili uchun yuklama topilmadi
+                            </td>
+                        </tr>
                         </tbody>
+                        <tfoot v-if="rows.length">
+                        <tr class="bg-yellow-50 font-bold text-sm">
+                            <td colspan="5" class="px-3 py-3 text-right border-t-2 border-gray-300">JAMI:</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s1_lecture || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s1_practical || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s1_laboratory || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s1_seminar || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s1_practice || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s2_lecture || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s2_practical || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s2_laboratory || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s2_seminar || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.s2_practice || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.coursework || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.diploma || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.consultation || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300">{{ totals.rating || '' }}</td>
+                            <td class="px-1 py-3 text-center border-t-2 border-gray-300 text-blue-700">{{ totals.total }}</td>
+                            <td class="border-t-2 border-gray-300"></td>
+                        </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex justify-between items-center">
-                <Link href="/reports"
-                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Orqaga</span>
-                </Link>
-            </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { ref, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const route = window.route
 
 const props = defineProps({
-    teacher: Object,
-    workloads: Array,
-    stats: Object,
-    semesters: Array,
-    selectedSemester: [String, Number],
-    canExport: Boolean,
-});
+    teacher:       Object,
+    academicYear:  Object,
+    academicYears: Array,
+    rows:          Array,
+    totals:        Object,
+    auditoria:     Number,
+})
 
-const currentSemester = ref(props.selectedSemester);
+const selectedYear = ref(props.academicYear?.id)
 
-const changeSemester = () => {
-    const params = currentSemester.value ? `?semester_id=${currentSemester.value}` : '';
-    router.visit(`/reports/teacher/${props.teacher.id}${params}`);
-};
+const exportUrl = computed(() =>
+    route('reports.export.teacher', props.teacher.id) + '?academic_year_id=' + selectedYear.value
+)
 
-const exportExcel = () => {
-    const params = new URLSearchParams({
-        type: 'teacher',
-        teacher_id: props.teacher.id,
-        semester_id: currentSemester.value || '',
-    });
+function reload() {
+    router.get(route('reports.teacher', props.teacher.id), {
+        academic_year_id: selectedYear.value,
+    }, { preserveScroll: true })
+}
 
-    window.location.href = `/reports/export/excel?${params.toString()}`;
-};
+function statusClass(status) {
+    return {
+        confirmed: 'bg-green-100 text-green-700',
+        pending:   'bg-yellow-100 text-yellow-700',
+        draft:     'bg-gray-100 text-gray-600',
+    }[status] ?? 'bg-gray-100 text-gray-600'
+}
 
-const exportPdf = () => {
-    const params = new URLSearchParams({
-        type: 'teacher',
-        teacher_id: props.teacher.id,
-        semester_id: currentSemester.value || '',
-    });
-
-    window.location.href = `/reports/export/pdf?${params.toString()}`;
-};
-
-
+function statusLabel(status) {
+    return {
+        confirmed: 'Tasdiqlangan',
+        pending:   'Tekshiruvda',
+        draft:     'Qoralama',
+    }[status] ?? status
+}
 </script>

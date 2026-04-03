@@ -2,479 +2,370 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\Faculty;
 use App\Models\Teacher;
 use App\Models\Workload;
-use App\Models\Semester;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class ReportController extends Controller
 {
-    /**
-     * Asosiy sahifa
-     */
-    public function index(): Response
+    // ─── Index sahifasi ───────────────────────────────────────────────────────
+
+    public function index()
     {
+        $academicYears = AcademicYear::orderByDesc('start_date')->get(['id', 'name', 'is_active']);
+        $activeYear    = $academicYears->firstWhere('is_active', true);
 
-
-        // O'qituvchilarni olish
-        $teachers = Teacher::with('user:id,name')
-            ->where('is_active', true)
+        $departments = Department::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $faculties   = Faculty::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $teachers    = Teacher::where('is_active', true)
+            ->with('user:id,name')
+            ->orderBy('id')
             ->get()
-            ->map(function($teacher) {
-                return [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user ? $teacher->user->name : 'Noma\'lum',
-                    'full_name' => $teacher->user ? $teacher->user->name : 'Noma\'lum',
-                ];
-            });
-
-        // Kafedralarni olish
-        $departments = Department::where('is_active', true)
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
-
-        // Fakultetlarni olish
-        $faculties = Faculty::where('is_active', true)
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
-
-        // Permission tekshirish
-        $canExport = false;
-        if (auth()->check()) {
-            $canExport = auth()->user()->can('reports.export');
-        }
+            ->map(fn($t) => ['id' => $t->id, 'name' => $t->user?->name ?? '—']);
 
         return Inertia::render('Reports/Index', [
-            'teachers' => $teachers,
-            'departments' => $departments,
-            'faculties' => $faculties,
-            'canExport' => $canExport,
+            'academicYears'    => $academicYears,
+            'activeYearId'     => $activeYear?->id,
+            'departments'      => $departments,
+            'faculties'        => $faculties,
+            'teachers'         => $teachers,
         ]);
     }
 
-    /**
-     * O'qituvchi bo'yicha hisobot
-     */
-    public function teacher(Request $request, Teacher $teacher): Response
+    // ─── Kafedra hisoboti ─────────────────────────────────────────────────────
+
+    public function department(Request $request, Department $department)
     {
-        $semesterId = $request->get('semester_id');
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
 
-        $query = Workload::where('teacher_id', $teacher->id)
-            ->with(['subject', 'group', 'semester']);
+        $academicYear = AcademicYear::find($academicYearId);
 
-        if ($semesterId) {
-            $query->where('semester_id', $semesterId);
-        } else {
-            $query->whereHas('semester', function ($q) {
-                $q->where('is_current', true);
-            });
-        }
-
-        $workloads = $query->get();
-
-        // Statistika
-        $stats = [
-            'total_hours' => $workloads->sum('total_hours'),
-            'lecture_hours' => $workloads->sum('lecture_hours'),
-            'practical_hours' => $workloads->sum('practical_hours'),
-            'seminar_hours' => $workloads->sum('seminar_hours'),
-            'exam_hours' => $workloads->sum('exam_hours'),
-            'total_subjects' => $workloads->unique('subject_id')->count(),
-            'total_groups' => $workloads->unique('group_id')->count(),
-        ];
-
-        $teacher->load(['user', 'department']);
-
-        return Inertia::render('Reports/Teacher', [
-            'teacher' => [
-                'id' => $teacher->id,
-                'name' => $teacher->user->name ?? '',
-                'full_name' => $teacher->user->name ?? '',
-                'position' => $teacher->position ?? '',
-                'department' => $teacher->department ? [
-                    'id' => $teacher->department->id,
-                    'name' => $teacher->department->name,
-                ] : null,
-            ],
-            'workloads' => $workloads->map(function ($workload) {
-                return [
-                    'id' => $workload->id,
-                    'subject' => [
-                        'id' => $workload->subject->id,
-                        'name' => $workload->subject->name,
-                        'code' => $workload->subject->code ?? '',
-                    ],
-                    'group' => [
-                        'id' => $workload->group->id,
-                        'name' => $workload->group->name,
-                    ],
-                    'semester' => [
-                        'id' => $workload->semester->id,
-                        'name' => $workload->semester->name,
-                    ],
-                    'lecture_hours' => $workload->lecture_hours ?? 0,
-                    'practical_hours' => $workload->practical_hours ?? 0,
-                    'seminar_hours' => $workload->seminar_hours ?? 0,
-                    'exam_hours' => $workload->exam_hours ?? 0,
-                    'total_hours' => $workload->total_hours,
-                ];
-            })->values(),
-            'stats' => $stats,
-            'semesters' => Semester::select('id', 'name', 'is_current')->get(),
-            'selectedSemester' => $semesterId,
-            'canExport' => auth()->check() ? auth()->user()->can('reports.export') : false,
-        ]);
-    }
-
-    /**
-     * Kafedra bo'yicha hisobot
-     */
-    public function department(Request $request, Department $department): Response
-    {
-        $semesterId = $request->get('semester_id');
-
+        // Kafedraning barcha o'qituvchilari va ularning yuklamalari
         $teachers = Teacher::where('department_id', $department->id)
-            ->with(['user', 'workloads' => function ($query) use ($semesterId) {
-                if ($semesterId) {
-                    $query->where('semester_id', $semesterId);
-                } else {
-                    $query->whereHas('semester', function ($q) {
-                        $q->where('is_current', true);
-                    });
-                }
-            }])
             ->where('is_active', true)
+            ->with([
+                'user:id,name',
+                'workloads' => fn($q) => $q
+                    ->where('academic_year_id', $academicYearId)
+                    ->where('status', 'confirmed'),
+            ])
             ->get();
 
-        $teacherStats = $teachers->map(function ($teacher) {
-            return [
-                'teacher' => [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user->name ?? '',
-                    'full_name' => $teacher->user->name ?? '',
-                    'position' => $teacher->position ?? '',
-                ],
-                'total_hours' => $teacher->workloads->sum('total_hours'),
-                'workloads_count' => $teacher->workloads->count(),
-                'lecture_hours' => $teacher->workloads->sum('lecture_hours'),
-                'practical_hours' => $teacher->workloads->sum('practical_hours'),
-                'seminar_hours' => $teacher->workloads->sum('seminar_hours'),
-            ];
-        })->values();
+        $rows = $teachers->map(function ($teacher, $idx) {
+            $workloads = $teacher->workloads;
 
-        $totalStats = [
-            'teachers_count' => $teachers->count(),
-            'total_hours' => $teacherStats->sum('total_hours'),
-            'total_workloads' => $teacherStats->sum('workloads_count'),
-            'average_hours' => $teachers->count() > 0
-                ? round($teacherStats->sum('total_hours') / $teachers->count(), 2)
-                : 0,
+            // Auditoriya soat = ma'ruza + amaliy + laboratoriya + seminar
+            $auditoria = $workloads->sum(fn($w) =>
+                $w->semester_1_lecture + $w->semester_1_practical +
+                $w->semester_1_laboratory + $w->semester_1_seminar +
+                $w->semester_2_lecture + $w->semester_2_practical +
+                $w->semester_2_laboratory + $w->semester_2_seminar
+            );
+            $lecture   = $workloads->sum(fn($w) => $w->semester_1_lecture + $w->semester_2_lecture);
+            $practical = $workloads->sum(fn($w) => $w->semester_1_practical + $w->semester_2_practical);
+            $seminar   = $workloads->sum(fn($w) => $w->semester_1_seminar + $w->semester_2_seminar);
+            $practice  = $workloads->sum(fn($w) => $w->semester_1_practice + $w->semester_2_practice);
+            $coursework= $workloads->sum('coursework_hours');
+            $diploma   = $workloads->sum('diploma_hours');
+            $rating    = $workloads->sum('rating');
+            $total     = $workloads->sum('total_hours');
+            $stavka    = $teacher->employment_type === 'main_job' ? 1.0
+                : ($teacher->employment_type === 'hourly' ? 0 : 0.5);
+
+            return [
+                'num'            => $idx + 1,
+                'name'           => $teacher->user?->name ?? '—',
+                'employment_type'=> $teacher->employmentTypeName,
+                'stavka'         => $stavka,
+                'position'       => $teacher->position ?? '',
+                'degree'         => $teacher->academic_degree ?? '',
+                'auditoria'      => round($auditoria, 1),
+                'lecture'        => round($lecture, 1),
+                'practical'      => round($practical, 1),
+                'seminar'        => round($seminar, 1),
+                'practice'       => round($practice, 1),
+                'coursework'     => round($coursework, 1),
+                'diploma'        => round($diploma, 1),
+                'rating'         => round($rating, 1),
+                'total'          => round($total, 1),
+            ];
+        });
+
+        $totals = [
+            'auditoria'  => round($rows->sum('auditoria'), 1),
+            'lecture'    => round($rows->sum('lecture'), 1),
+            'practical'  => round($rows->sum('practical'), 1),
+            'seminar'    => round($rows->sum('seminar'), 1),
+            'practice'   => round($rows->sum('practice'), 1),
+            'coursework' => round($rows->sum('coursework'), 1),
+            'diploma'    => round($rows->sum('diploma'), 1),
+            'rating'     => round($rows->sum('rating'), 1),
+            'total'      => round($rows->sum('total'), 1),
         ];
 
-        // Load faculty and head
-        $department->load(['faculty', 'head']);
+        $department->load('faculty');
 
         return Inertia::render('Reports/Department', [
-            'department' => [
-                'id' => $department->id,
-                'name' => $department->name,
-                'head' => $department->head ? $department->head->name : '',
-                'faculty' => $department->faculty ? [
-                    'id' => $department->faculty->id,
-                    'name' => $department->faculty->name,
-                ] : null,
+            'department'   => [
+                'id'      => $department->id,
+                'name'    => $department->name,
+                'faculty' => $department->faculty?->name,
             ],
-            'teacherStats' => $teacherStats,
-            'totalStats' => $totalStats,
-            'semesters' => Semester::select('id', 'name', 'is_current')->get(),
-            'selectedSemester' => $semesterId,
-            'canExport' => auth()->check() ? auth()->user()->can('reports.export') : false,
+            'academicYear'  => $academicYear,
+            'academicYears' => AcademicYear::orderByDesc('start_date')->get(['id', 'name', 'is_active']),
+            'rows'          => $rows->values(),
+            'totals'        => $totals,
         ]);
     }
 
-    /**
-     * Fakultet bo'yicha hisobot
-     */
-    public function faculty(Request $request, Faculty $faculty): Response
-    {
-        $semesterId = $request->get('semester_id');
+    // ─── Fakultet hisoboti ────────────────────────────────────────────────────
 
-        $departments = Department::where('faculty_id', $faculty->id)
-            ->with(['teachers' => function ($query) use ($semesterId) {
-                $query->where('is_active', true)
-                    ->with(['workloads' => function ($q) use ($semesterId) {
-                        if ($semesterId) {
-                            $q->where('semester_id', $semesterId);
-                        } else {
-                            $q->whereHas('semester', function ($sq) {
-                                $sq->where('is_current', true);
-                            });
-                        }
-                    }]);
-            }, 'head'])
-            ->where('is_active', true)
+    public function faculty(Request $request, Faculty $faculty)
+    {
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
+
+        $academicYear = AcademicYear::find($academicYearId);
+
+        // Fakultetning barcha yuklamalari — o'qituvchi, fan, guruhlar bilan
+        $workloads = Workload::where('academic_year_id', $academicYearId)
+            ->where('status', 'confirmed')
+            ->whereHas('department', fn($q) => $q->where('faculty_id', $faculty->id))
+            ->with([
+                'teacher.user:id,name',
+                'subject:id,name',
+                'direction:id,name',
+                'groups:id,name,course,student_count',
+                'department:id,name',
+            ])
+            ->orderBy('teacher_id')
             ->get();
 
-        $departmentStats = $departments->map(function ($department) {
-            $totalHours = 0;
-            $teachersCount = $department->teachers->count();
+        // O'qituvchi bo'yicha guruhlash
+        $grouped = $workloads->groupBy('teacher_id');
 
-            foreach ($department->teachers as $teacher) {
-                $totalHours += $teacher->workloads->sum('total_hours');
+        $rows = [];
+        foreach ($grouped as $teacherId => $teacherWorkloads) {
+            $firstRow = true;
+            $teacher  = $teacherWorkloads->first()->teacher;
+
+            foreach ($teacherWorkloads as $w) {
+                $groups     = $w->groups;
+                $groupNames = $groups->pluck('name')->join(', ');
+                $course     = $groups->first()?->course ?? '';
+                $groupCount = $groups->count();
+                $students   = $w->total_students ?? $groups->sum('student_count');
+
+                // 1-semestr auditoriya
+                $s1Auditoria = $w->semester_1_lecture + $w->semester_1_practical +
+                    $w->semester_1_laboratory + $w->semester_1_seminar;
+                $s1Total = $s1Auditoria + $w->semester_1_practice +
+                    $w->semester_1_exam + $w->semester_1_test +
+                    (($w->semester_2_lecture + $w->semester_2_practical +
+                        $w->semester_2_laboratory + $w->semester_2_seminar) == 0
+                        ? $w->coursework_hours + $w->rating : 0);
+
+                // 2-semestr auditoriya
+                $s2Auditoria = $w->semester_2_lecture + $w->semester_2_practical +
+                    $w->semester_2_laboratory + $w->semester_2_seminar;
+                $s2Total = $s2Auditoria + $w->semester_2_practice +
+                    $w->semester_2_exam + $w->semester_2_test;
+
+                $jami = $w->total_hours;
+
+                $rows[] = [
+                    'teacher_name'    => $firstRow ? ($teacher->user?->name ?? '—') : null,
+                    'teacher_info'    => $firstRow ? ($teacher->academic_degree ?? '') : null,
+                    'subject'         => $w->subject?->name ?? '—',
+                    'direction'       => $w->direction?->name ?? '—',
+                    'groups'          => $groupNames,
+                    'course'          => $course,
+                    'group_count'     => $groupCount,
+                    'students'        => $students,
+                    'is_potok'        => $w->is_potok ? 'P' : '',
+
+                    // 1-semestr
+                    's1_lecture'      => $w->semester_1_lecture ?: '',
+                    's1_practical'    => $w->semester_1_practical ?: '',
+                    's1_laboratory'   => $w->semester_1_laboratory ?: '',
+                    's1_seminar'      => $w->semester_1_seminar ?: '',
+                    's1_practice'     => $w->semester_1_practice ?: '',
+                    's1_total'        => round($s1Auditoria + $w->semester_1_practice, 1) ?: '',
+
+                    // 2-semestr
+                    's2_lecture'      => $w->semester_2_lecture ?: '',
+                    's2_practical'    => $w->semester_2_practical ?: '',
+                    's2_laboratory'   => $w->semester_2_laboratory ?: '',
+                    's2_seminar'      => $w->semester_2_seminar ?: '',
+                    's2_practice'     => $w->semester_2_practice ?: '',
+                    's2_total'        => round($s2Auditoria + $w->semester_2_practice, 1) ?: '',
+
+                    // Qo'shimcha
+                    'coursework'      => $w->coursework_hours ?: '',
+                    'diploma'         => $w->diploma_hours ?: '',
+                    'rating'          => $w->rating ?: '',
+
+                    // Jami
+                    'auditoria_total' => round(($s1Auditoria + $w->semester_1_practice) +
+                        ($s2Auditoria + $w->semester_2_practice), 1),
+                    'total'           => round($jami, 1),
+
+                    'employment_type' => $firstRow ? $teacher->employment_type : null,
+                ];
+                $firstRow = false;
             }
+        }
 
-            return [
-                'department' => [
-                    'id' => $department->id,
-                    'name' => $department->name,
-                    'head' => $department->head ? $department->head->name : '',
-                ],
-                'teachers_count' => $teachersCount,
-                'total_hours' => $totalHours,
-                'average_hours' => $teachersCount > 0 ? round($totalHours / $teachersCount, 2) : 0,
-            ];
-        })->values();
-
-        $totalStats = [
-            'departments_count' => $departments->count(),
-            'teachers_count' => $departmentStats->sum('teachers_count'),
-            'total_hours' => $departmentStats->sum('total_hours'),
-        ];
-
-        // Load dean
         $faculty->load('dean');
 
         return Inertia::render('Reports/Faculty', [
-            'faculty' => [
-                'id' => $faculty->id,
+            'faculty'       => [
+                'id'   => $faculty->id,
                 'name' => $faculty->name,
-                'dean' => $faculty->dean ? $faculty->dean->name : '',
-                'code' => $faculty->code ?? '',
+                'dean' => $faculty->dean?->name,
             ],
-            'departmentStats' => $departmentStats,
-            'totalStats' => $totalStats,
-            'semesters' => Semester::select('id', 'name', 'is_current')->get(),
-            'selectedSemester' => $semesterId,
-            'canExport' => auth()->check() ? auth()->user()->can('reports.export') : false,
+            'academicYear'  => $academicYear,
+            'academicYears' => AcademicYear::orderByDesc('start_date')->get(['id', 'name', 'is_active']),
+            'rows'          => $rows,
+            'totals'        => [
+                'total' => round($workloads->sum('total_hours'), 1),
+            ],
         ]);
     }
 
-    /**
-     * Excel export
-     */
-    public function exportExcel(Request $request)
+    // ─── O'qituvchi hisoboti ──────────────────────────────────────────────────
+
+    public function teacher(Request $request, Teacher $teacher)
     {
-        // Route allaqachon middleware bilan himoyalangan
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
 
-        $type = $request->get('type');
-        $semesterId = $request->get('semester_id');
+        $academicYear = AcademicYear::find($academicYearId);
 
-        try {
-            switch ($type) {
-                case 'teacher':
-                    $teacherId = $request->get('teacher_id');
-                    $teacher = Teacher::findOrFail($teacherId);
-                    $fileName = 'oqituvchi_hisoboti_' . str_replace(' ', '_', $teacher->user->name) . '_' . date('Y-m-d') . '.xlsx';
+        $workloads = Workload::where('teacher_id', $teacher->id)
+            ->where('academic_year_id', $academicYearId)
+            ->with([
+                'subject:id,name,code',
+                'groups:id,name,course,student_count',
+                'direction:id,name',
+            ])
+            ->get();
 
-                    return \Maatwebsite\Excel\Facades\Excel::download(
-                        new \App\Exports\TeacherReportExport($teacherId, $semesterId),
-                        $fileName
-                    );
+        $teacher->load(['user:id,name', 'department:id,name']);
 
-                case 'department':
-                    $departmentId = $request->get('department_id');
-                    $department = Department::findOrFail($departmentId);
-                    $fileName = 'kafedra_hisoboti_' . str_replace(' ', '_', $department->name) . '_' . date('Y-m-d') . '.xlsx';
+        $rows = $workloads->map(function ($w) {
+            $groups = $w->groups;
+            return [
+                'subject'       => $w->subject?->name ?? '—',
+                'direction'     => $w->direction?->name ?? '—',
+                'groups'        => $groups->pluck('name')->join(', '),
+                'course'        => $groups->first()?->course ?? '',
+                'students'      => $w->total_students ?? $groups->sum('student_count'),
+                'is_potok'      => $w->is_potok,
 
-                    return \Maatwebsite\Excel\Facades\Excel::download(
-                        new \App\Exports\DepartmentReportExport($departmentId, $semesterId),
-                        $fileName
-                    );
+                // 1-semestr
+                's1_lecture'    => $w->semester_1_lecture ?: 0,
+                's1_practical'  => $w->semester_1_practical ?: 0,
+                's1_laboratory' => $w->semester_1_laboratory ?: 0,
+                's1_seminar'    => $w->semester_1_seminar ?: 0,
+                's1_practice'   => $w->semester_1_practice ?: 0,
 
-                case 'faculty':
-                    $facultyId = $request->get('faculty_id');
-                    $faculty = Faculty::findOrFail($facultyId);
-                    $fileName = 'fakultet_hisoboti_' . str_replace(' ', '_', $faculty->name) . '_' . date('Y-m-d') . '.xlsx';
+                // 2-semestr
+                's2_lecture'    => $w->semester_2_lecture ?: 0,
+                's2_practical'  => $w->semester_2_practical ?: 0,
+                's2_laboratory' => $w->semester_2_laboratory ?: 0,
+                's2_seminar'    => $w->semester_2_seminar ?: 0,
+                's2_practice'   => $w->semester_2_practice ?: 0,
 
-                    return \Maatwebsite\Excel\Facades\Excel::download(
-                        new \App\Exports\FacultyReportExport($facultyId, $semesterId),
-                        $fileName
-                    );
+                // Qo'shimcha
+                'coursework'    => $w->coursework_hours ?: 0,
+                'diploma'       => $w->diploma_hours ?: 0,
+                'consultation'  => $w->consultation_hours ?: 0,
+                'rating'        => $w->rating ?: 0,
+                'total'         => round($w->total_hours, 1),
+                'status'        => $w->status,
+            ];
+        });
 
-                default:
-                    return back()->with('error', 'Noto\'g\'ri hisobot turi');
-            }
-        } catch (\Exception $e) {
-            return back()->with('error', 'Excel yuklab olishda xatolik: ' . $e->getMessage());
-        }
+        $totals = [
+            's1_lecture'    => round($rows->sum('s1_lecture'), 1),
+            's1_practical'  => round($rows->sum('s1_practical'), 1),
+            's1_laboratory' => round($rows->sum('s1_laboratory'), 1),
+            's1_seminar'    => round($rows->sum('s1_seminar'), 1),
+            's1_practice'   => round($rows->sum('s1_practice'), 1),
+            's2_lecture'    => round($rows->sum('s2_lecture'), 1),
+            's2_practical'  => round($rows->sum('s2_practical'), 1),
+            's2_laboratory' => round($rows->sum('s2_laboratory'), 1),
+            's2_seminar'    => round($rows->sum('s2_seminar'), 1),
+            's2_practice'   => round($rows->sum('s2_practice'), 1),
+            'coursework'    => round($rows->sum('coursework'), 1),
+            'diploma'       => round($rows->sum('diploma'), 1),
+            'consultation'  => round($rows->sum('consultation'), 1),
+            'rating'        => round($rows->sum('rating'), 1),
+            'total'         => round($rows->sum('total'), 1),
+        ];
+
+        $auditoria = round(
+            $totals['s1_lecture'] + $totals['s1_practical'] + $totals['s1_laboratory'] + $totals['s1_seminar'] +
+            $totals['s1_practice'] + $totals['s2_lecture'] + $totals['s2_practical'] +
+            $totals['s2_laboratory'] + $totals['s2_seminar'] + $totals['s2_practice'], 1
+        );
+
+        return Inertia::render('Reports/Teacher', [
+            'teacher' => [
+                'id'         => $teacher->id,
+                'name'       => $teacher->user?->name ?? '—',
+                'position'   => $teacher->position ?? '',
+                'degree'     => $teacher->academic_degree ?? '',
+                'title'      => $teacher->academic_title ?? '',
+                'department' => $teacher->department?->name ?? '',
+                'employment' => $teacher->employmentTypeName,
+            ],
+            'academicYear'  => $academicYear,
+            'academicYears' => AcademicYear::orderByDesc('start_date')->get(['id', 'name', 'is_active']),
+            'rows'          => $rows->values(),
+            'totals'        => $totals,
+            'auditoria'     => $auditoria,
+        ]);
     }
 
-    /**
-     * PDF export
-     */
-   /**
- * PDF export
- */
-public function exportPdf(Request $request)
-{
-    // Route allaqachon middleware bilan himoyalangan
+    // ─── Excel export ─────────────────────────────────────────────────────────
 
-    $type = $request->get('type');
-    $semesterId = $request->get('semester_id');
+    public function exportDepartment(Request $request, Department $department)
+    {
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
 
-    try {
-        $pdf = null;
-        $fileName = '';
-
-        switch ($type) {
-            case 'teacher':
-                $teacherId = $request->get('teacher_id');
-                $teacher = Teacher::with(['user', 'department'])->findOrFail($teacherId);
-
-                $query = Workload::where('teacher_id', $teacherId)
-                    ->with(['subject', 'group', 'semester']);
-
-                if ($semesterId) {
-                    $query->where('semester_id', $semesterId);
-                } else {
-                    $query->whereHas('semester', function ($q) {
-                        $q->where('is_current', true);
-                    });
-                }
-
-                $workloads = $query->get();
-
-                $stats = [
-                    'total_hours' => $workloads->sum('total_hours'),
-                    'lecture_hours' => $workloads->sum('lecture_hours'),
-                    'seminar_hours' => $workloads->sum('seminar_hours'),
-                    'practical_hours' => $workloads->sum('practical_hours'),
-                    'exam_hours' => $workloads->sum('exam_hours'),
-                    'total_subjects' => $workloads->unique('subject_id')->count(),
-                    'total_groups' => $workloads->unique('group_id')->count(),
-                ];
-
-                $semester = $semesterId ? Semester::find($semesterId)?->name : null;
-
-                $pdf = \PDF::loadView('reports.teacher-pdf', compact('teacher', 'workloads', 'stats', 'semester'));
-                $fileName = 'oqituvchi_hisoboti_' . str_replace(' ', '_', $teacher->user->name) . '_' . date('Y-m-d') . '.pdf';
-                break;
-
-            case 'department':
-                $departmentId = $request->get('department_id');
-                $department = Department::with(['faculty', 'head'])->findOrFail($departmentId);
-
-                $teachers = Teacher::where('department_id', $departmentId)
-                    ->with(['user', 'workloads' => function ($query) use ($semesterId) {
-                        if ($semesterId) {
-                            $query->where('semester_id', $semesterId);
-                        } else {
-                            $query->whereHas('semester', function ($q) {
-                                $q->where('is_current', true);
-                            });
-                        }
-                    }])
-                    ->where('is_active', true)
-                    ->get();
-
-                $teacherStats = $teachers->map(function ($teacher) {
-                    return [
-                        'teacher' => [
-                            'id' => $teacher->id,
-                            'name' => $teacher->user->name ?? '',
-                            'full_name' => $teacher->user->name ?? '',
-                            'position' => $teacher->position ?? '',
-                        ],
-                        'total_hours' => $teacher->workloads->sum('total_hours'),
-                        'workloads_count' => $teacher->workloads->count(),
-                        'lecture_hours' => $teacher->workloads->sum('lecture_hours'),
-                        'seminar_hours' => $teacher->workloads->sum('seminar_hours'),
-                        'practical_hours' => $teacher->workloads->sum('practical_hours'),
-                    ];
-                })->values()->toArray();
-
-                $totalStats = [
-                    'teachers_count' => $teachers->count(),
-                    'total_hours' => collect($teacherStats)->sum('total_hours'),
-                    'total_workloads' => collect($teacherStats)->sum('workloads_count'),
-                    'average_hours' => $teachers->count() > 0
-                        ? round(collect($teacherStats)->sum('total_hours') / $teachers->count(), 2)
-                        : 0,
-                ];
-
-                $semester = $semesterId ? Semester::find($semesterId)?->name : null;
-
-                $pdf = \PDF::loadView('reports.department-pdf', compact('department', 'teacherStats', 'totalStats', 'semester'));
-                $fileName = 'kafedra_hisoboti_' . str_replace(' ', '_', $department->name) . '_' . date('Y-m-d') . '.pdf';
-                break;
-
-            case 'faculty':
-                $facultyId = $request->get('faculty_id');
-                $faculty = Faculty::with('dean')->findOrFail($facultyId);
-
-                $departments = Department::where('faculty_id', $facultyId)
-                    ->with(['head', 'teachers' => function ($query) use ($semesterId) {
-                        $query->where('is_active', true)
-                            ->with(['workloads' => function ($q) use ($semesterId) {
-                                if ($semesterId) {
-                                    $q->where('semester_id', $semesterId);
-                                } else {
-                                    $q->whereHas('semester', function ($sq) {
-                                        $sq->where('is_current', true);
-                                    });
-                                }
-                            }]);
-                    }])
-                    ->where('is_active', true)
-                    ->get();
-
-                $departmentStats = $departments->map(function ($department) {
-                    $totalHours = 0;
-                    $teachersCount = $department->teachers->count();
-
-                    foreach ($department->teachers as $teacher) {
-                        $totalHours += $teacher->workloads->sum('total_hours');
-                    }
-
-                    return [
-                        'department' => [
-                            'id' => $department->id,
-                            'name' => $department->name,
-                            'head' => $department->head ? $department->head->name : '',
-                        ],
-                        'teachers_count' => $teachersCount,
-                        'total_hours' => $totalHours,
-                        'average_hours' => $teachersCount > 0 ? round($totalHours / $teachersCount, 2) : 0,
-                    ];
-                })->values()->toArray();
-
-                $totalStats = [
-                    'departments_count' => $departments->count(),
-                    'teachers_count' => collect($departmentStats)->sum('teachers_count'),
-                    'total_hours' => collect($departmentStats)->sum('total_hours'),
-                ];
-
-                $semester = $semesterId ? Semester::find($semesterId)?->name : null;
-
-                $pdf = \PDF::loadView('reports.faculty-pdf', compact('faculty', 'departmentStats', 'totalStats', 'semester'));
-                $fileName = 'fakultet_hisoboti_' . str_replace(' ', '_', $faculty->name) . '_' . date('Y-m-d') . '.pdf';
-                break;
-
-            default:
-                return back()->with('error', 'Noto\'g\'ri hisobot turi');
-        }
-
-        return $pdf->download($fileName);
-
-    } catch (\Exception $e) {
-        \Log::error('PDF export error: ' . $e->getMessage());
-        return back()->with('error', 'PDF yuklab olishda xatolik: ' . $e->getMessage());
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\DepartmentReportExport($department->id, $academicYearId),
+            'kafedra_hisoboti_' . $department->id . '_' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
-}
+
+    public function exportFaculty(Request $request, Faculty $faculty)
+    {
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\FacultyReportExport($faculty->id, $academicYearId),
+            'fakultet_hisoboti_' . $faculty->id . '_' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function exportTeacher(Request $request, Teacher $teacher)
+    {
+        $academicYearId = $request->input('academic_year_id')
+            ?? AcademicYear::where('is_active', true)->value('id');
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TeacherReportExport($teacher->id, $academicYearId),
+            'oqituvchi_hisoboti_' . $teacher->id . '_' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
 }

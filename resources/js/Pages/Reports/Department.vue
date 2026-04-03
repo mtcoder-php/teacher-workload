@@ -1,197 +1,147 @@
 <template>
-    <Head :title="`${department.name} - Hisobot`" />
-    
     <AuthenticatedLayout>
-        <template #header>Kafedra hisoboti</template>
+        <template #header>Kafedra Hisoboti</template>
 
-        <div class="space-y-6">
-            <!-- Department Info Card -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-sm overflow-hidden">
-                <div class="px-6 py-8 text-white">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 class="text-3xl font-bold">{{ department.name }}</h2>
-                            <p class="text-green-100 mt-1">{{ department.faculty?.name }}</p>
-                            <p class="text-green-100">Mudiri: {{ department.head || 'Belgilanmagan' }}</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button
-                                v-if="canExport"
-                                @click="exportExcel"
-                                class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition"
-                            >
-                                Excel
-                            </button>
-                            <button
-                                v-if="canExport"
-                                @click="exportPdf"
-                                class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition"
-                            >
-                                PDF
-                            </button>
-                        </div>
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Boshqaruv paneli -->
+            <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">{{ department.name }}</h2>
+                        <p class="text-sm text-gray-500">{{ academicYear?.name }} o'quv yili</p>
                     </div>
-                    
-                    <select
-                        v-model="currentSemester"
-                        @change="changeSemester"
-                        class="px-4 py-2 text-gray-900 rounded-lg focus:ring-2 focus:ring-white pr-10 appearance-none bg-white"
-                    >
-                        <option :value="null">Joriy semestr</option>
-                        <option v-for="semester in semesters" :key="semester.id" :value="semester.id">
-                            {{ semester.name }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Statistics Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-blue-600 mb-1">O'qituvchilar</p>
-                            <p class="text-3xl font-bold text-blue-900">{{ totalStats.teachers_count }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <div class="flex items-center gap-3">
+                        <select v-model="selectedYear" @change="reload"
+                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                            <option v-for="y in academicYears" :key="y.id" :value="y.id">
+                                {{ y.name }}{{ y.is_active ? ' ✓' : '' }}
+                            </option>
+                        </select>
+                        <a :href="exportUrl"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white
+                                  rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-green-600 mb-1">Jami soatlar</p>
-                            <p class="text-3xl font-bold text-green-900">{{ totalStats.total_hours }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-purple-600 mb-1">O'rtacha yuklama</p>
-                            <p class="text-3xl font-bold text-purple-900">{{ totalStats.average_hours }}</p>
-                        </div>
-                        <div class="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                        </div>
+                            Excel
+                        </a>
+                        <Link :href="route('reports.index')"
+                              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200
+                                     transition-colors text-sm">
+                            ← Orqaga
+                        </Link>
                     </div>
                 </div>
             </div>
 
-            <!-- Teachers Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-xl font-semibold text-gray-800">O'qituvchilar bo'yicha</h2>
-                </div>
+            <!-- Sarlavha bloki -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-6 p-5 text-center">
+                <h3 class="text-base font-bold text-gray-900">{{ department.name }}</h3>
+                <p class="text-sm text-gray-600 mt-1">
+                    {{ academicYear?.name }} o'quv yili uchun Professor-o'qituvchilarning
+                    <span class="font-semibold">O'QUV YUKLAMASI</span>
+                </p>
+                <p class="text-xs text-gray-400 mt-1">{{ today }} holati</p>
+            </div>
+
+            <!-- Jadval -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">O'qituvchi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lavozim</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Yuklamalar</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ma'ruza</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seminar</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amaliy</th>                                
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jami soat</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
-                            </tr>
+                    <table class="min-w-full text-xs border-collapse">
+                        <thead>
+                        <tr class="bg-blue-900 text-white">
+                            <th class="px-2 py-3 text-center border border-blue-700 w-8">T/r</th>
+                            <th class="px-3 py-3 text-left border border-blue-700 min-w-40">F.I.O</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Shtat birligi</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Stavka</th>
+                            <th class="px-3 py-3 text-left border border-blue-700 min-w-28">Lavozimi</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Darajasi</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Auditoriya soati</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Ma'ruza</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Amaliy</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Seminar</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Amaliyot</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Kurs ishi</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Reyting</th>
+                            <th class="px-2 py-3 text-center border border-blue-700">Umumiy yuklama</th>
+                        </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(stat, index) in teacherStats" :key="stat.teacher.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ index + 1 }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ stat.teacher.full_name }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ stat.teacher.position || '—' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ stat.workloads_count }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ stat.lecture_hours }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ stat.seminar_hours }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ stat.practical_hours }}</td>                                
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="font-semibold text-green-600">{{ stat.total_hours }}</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <Link
-                                        :href="`/reports/teacher/${stat.teacher.id}?semester_id=${currentSemester || ''}`"
-                                        class="text-indigo-600 hover:text-indigo-900"
-                                    >
-                                        Batafsil
-                                    </Link>
-                                </td>
-                            </tr>
+                        <tbody class="divide-y divide-gray-100">
+                        <tr v-for="row in rows" :key="row.num"
+                            class="hover:bg-gray-50"
+                            :class="row.num % 2 === 0 ? 'bg-blue-50/30' : 'bg-white'">
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200 text-gray-500">{{ row.num }}</td>
+                            <td class="px-3 py-2.5 font-medium text-gray-900 border-r border-gray-200">{{ row.name }}</td>
+                            <td class="px-2 py-2.5 text-center text-gray-600 border-r border-gray-200">{{ row.employment_type }}</td>
+                            <td class="px-2 py-2.5 text-center text-gray-600 border-r border-gray-200">{{ row.stavka }}</td>
+                            <td class="px-3 py-2.5 text-gray-600 border-r border-gray-200">{{ row.position }}</td>
+                            <td class="px-2 py-2.5 text-center text-gray-600 border-r border-gray-200">{{ row.degree }}</td>
+                            <td class="px-2 py-2.5 text-center font-medium border-r border-gray-200">{{ row.auditoria || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.lecture || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.practical || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.seminar || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.practice || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.coursework || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center border-r border-gray-200">{{ row.rating || '—' }}</td>
+                            <td class="px-2 py-2.5 text-center font-bold text-blue-700">{{ row.total || '—' }}</td>
+                        </tr>
+
+                        <!-- Bo'sh holat -->
+                        <tr v-if="!rows.length">
+                            <td colspan="14" class="px-6 py-12 text-center text-gray-400">
+                                Bu o'quv yili uchun tasdiqlangan yuklama topilmadi
+                            </td>
+                        </tr>
                         </tbody>
+                        <!-- Jami -->
+                        <tfoot v-if="rows.length">
+                        <tr class="bg-yellow-50 font-bold text-sm">
+                            <td colspan="6" class="px-3 py-3 text-right border-t-2 border-gray-300">Umumiy JAMI:</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.auditoria }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.lecture }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.practical }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.seminar }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.practice }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.coursework }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300">{{ totals.rating }}</td>
+                            <td class="px-2 py-3 text-center border-t-2 border-gray-300 text-blue-700">{{ totals.total }}</td>
+                        </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex justify-between items-center">
-                <Link
-                    href="/reports"
-                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center space-x-2"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    <span>Orqaga</span>
-                </Link>
-            </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { ref, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const route = window.route
 
 const props = defineProps({
-    department: Object,
-    teacherStats: Array,
-    totalStats: Object,
-    semesters: Array,
-    selectedSemester: [String, Number],
-    canExport: Boolean,
-});
+    department:    Object,
+    academicYear:  Object,
+    academicYears: Array,
+    rows:          Array,
+    totals:        Object,
+})
 
-const currentSemester = ref(props.selectedSemester);
+const selectedYear = ref(props.academicYear?.id)
+const today = new Date().toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric' })
 
-const changeSemester = () => {
-    const params = currentSemester.value ? `?semester_id=${currentSemester.value}` : '';
-    router.visit(`/reports/department/${props.department.id}${params}`);
-};
+const exportUrl = computed(() =>
+    route('reports.export.department', props.department.id) + '?academic_year_id=' + selectedYear.value
+)
 
-const exportExcel = () => {
-    const params = new URLSearchParams({
-        type: 'department',
-        department_id: props.department.id,
-        semester_id: currentSemester.value || '',
-    });
-    
-    window.location.href = `/reports/export/excel?${params.toString()}`;
-};
-
-const exportPdf = () => {
-    const params = new URLSearchParams({
-        type: 'department',
-        department_id: props.department.id,
-        semester_id: currentSemester.value || '',
-    });
-    
-    window.location.href = `/reports/export/pdf?${params.toString()}`;
-};
+function reload() {
+    router.get(route('reports.department', props.department.id), {
+        academic_year_id: selectedYear.value,
+    }, { preserveScroll: true })
+}
 </script>
