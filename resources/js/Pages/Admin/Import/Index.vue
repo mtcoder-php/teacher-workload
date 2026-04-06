@@ -1,4 +1,5 @@
 <template>
+    <Head title="Import sahifasi" />
     <AuthenticatedLayout>
         <template #header>
             Excel Import
@@ -160,6 +161,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import ImportCard from '@/Components/Import/ImportCard.vue'
+import {Head} from "@inertiajs/vue3";
 
 const props = defineProps({
     departments: { type: Array, default: () => [] },

@@ -1,4 +1,5 @@
 <template>
+    <Head title="Yuklamalar" />
     <AuthenticatedLayout>
         <template #header>
             Yuklamalar Boshqaruvi
@@ -304,7 +305,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Link, router, usePage } from '@inertiajs/vue3'
+import {Head, Link, router, usePage} from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 const route = window.route

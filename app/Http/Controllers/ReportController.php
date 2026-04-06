@@ -341,10 +341,7 @@ class ReportController extends Controller
         $academicYearId = $request->input('academic_year_id')
             ?? AcademicYear::where('is_active', true)->value('id');
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\DepartmentReportExport($department->id, $academicYearId),
-            'kafedra_hisoboti_' . $department->id . '_' . now()->format('Y-m-d') . '.xlsx'
-        );
+        return (new \App\Exports\DepartmentReportExport($department->id, $academicYearId))->download();
     }
 
     public function exportFaculty(Request $request, Faculty $faculty)
@@ -352,10 +349,7 @@ class ReportController extends Controller
         $academicYearId = $request->input('academic_year_id')
             ?? AcademicYear::where('is_active', true)->value('id');
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\FacultyReportExport($faculty->id, $academicYearId),
-            'fakultet_hisoboti_' . $faculty->id . '_' . now()->format('Y-m-d') . '.xlsx'
-        );
+        return (new \App\Exports\FacultyReportExport($faculty->id, $academicYearId))->download();
     }
 
     public function exportTeacher(Request $request, Teacher $teacher)
@@ -363,9 +357,6 @@ class ReportController extends Controller
         $academicYearId = $request->input('academic_year_id')
             ?? AcademicYear::where('is_active', true)->value('id');
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\TeacherReportExport($teacher->id, $academicYearId),
-            'oqituvchi_hisoboti_' . $teacher->id . '_' . now()->format('Y-m-d') . '.xlsx'
-        );
+        return (new \App\Exports\TeacherReportExport($teacher->id, $academicYearId))->download();
     }
 }

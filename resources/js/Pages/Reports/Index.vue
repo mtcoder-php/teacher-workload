@@ -1,4 +1,5 @@
 <template>
+    <Head title="Hisobotlar" />
     <AuthenticatedLayout>
         <template #header>Hisobotlar</template>
 
@@ -143,7 +144,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import {Head, Link} from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 const route = window.route
