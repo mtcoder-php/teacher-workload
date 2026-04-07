@@ -98,17 +98,7 @@
                     <span>Hisobotlar</span>
                 </NavLink>
 
-                <!-- Import - faqat admin uchun -->
-                <NavLink
-                    v-if="$page.props.auth?.user?.role?.name === 'admin'"
-                    href="/admin/import"
-                    :active="$page.url.startsWith('/admin/import')"
-                >
-                    <Icon :size="20">
-                        <CloudUploadOutline />
-                    </Icon>
-                    <span>Import</span>
-                </NavLink>
+
             </nav>
         </div>
 
@@ -131,7 +121,8 @@
                     </h2>
 
                     <div class="flex items-center gap-2">
-                        <!-- Notifications Bell -->
+                        <!-- Analog soat — notification yonida -->
+                        <AnalogClock />
                         <div class="relative">
                             <button @click.stop="toggleNotifications" type="button" ref="notificationsButton"
                                     class="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
@@ -294,6 +285,16 @@
                                         <span>Foydalanuvchilar</span>
                                     </Link>
 
+                                    <!-- Import -->
+                                    <Link href="/admin/import"
+                                          class="flex items-center space-x-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                          @click="userMenuOpen = false">
+                                        <Icon :size="16">
+                                            <CloudUploadOutline />
+                                        </Icon>
+                                        <span>Import</span>
+                                    </Link>
+
                                     <!-- Permissions -->
                                     <Link href="/admin/permissions"
                                           class="flex items-center space-x-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -407,6 +408,7 @@ import {
     CloudUploadOutline,
 } from '@vicons/ionicons5';
 import NavLink from '@/Components/NavLink.vue';
+import AnalogClock from '@/Components/AnalogClock.vue'
 // Quyidagi ikki qatorni mavjud import lar bilan birga qo'shing:
 import ToastContainer from '@/Components/ToastContainer.vue'
 import { useToast }   from '@/Composables/useToast'

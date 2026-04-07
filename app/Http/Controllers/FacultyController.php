@@ -20,10 +20,10 @@ class FacultyController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhereHas('dean', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhereHas('dean', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -45,8 +45,8 @@ class FacultyController extends Controller
             $deans = User::whereHas('role', function ($query) {
                 $query->where('name', 'dekan');
             })->where('is_active', true)
-              ->select('id', 'name', 'email')
-              ->get();
+                ->select('id', 'name', 'email')
+                ->get();
         } catch (\Exception $e) {
             $deans = User::where('is_active', true)
                 ->select('id', 'name', 'email')
@@ -69,22 +69,17 @@ class FacultyController extends Controller
 
     public function show(Faculty $faculty)
     {
-        try {
-            $faculty->load([
-                'dean',
-                'departments' => function($query) {
-                    $query->withCount('teachers');
-                },
-                'groups'
-            ]);
+        $faculty->load([
+            'dean:id,name,email',
+        ]);
 
-            return Inertia::render('Faculties/Show', [
-                'faculty' => $faculty
-            ]);
-        } catch (\Exception $e) {
-            return redirect()->route('faculties.index')
-                ->with('error', 'Xatolik: ' . $e->getMessage());
-        }
+        return Inertia::render('Faculties/Show', [
+            'faculty'          => $faculty,
+            'departments_count'=> $faculty->departments()->count(),
+            'teachers_count'   => \App\Models\Teacher::whereHas('department', fn($q) =>
+            $q->where('faculty_id', $faculty->id)
+            )->where('is_active', true)->count(),
+        ]);
     }
 
     public function edit(Faculty $faculty)
@@ -113,9 +108,9 @@ class FacultyController extends Controller
                 'old_dean_id' => $faculty->dean_id,
                 'new_data' => $request->validated()
             ]);
-            
+
             $faculty->update($request->validated());
-            
+
             // Dean o'zgarganini tekshirish
             if ($request->filled('dean_id')) {
                 \Log::info('Dean updated:', [
@@ -127,13 +122,13 @@ class FacultyController extends Controller
             return redirect()
                 ->route('faculties.index')
                 ->with('success', 'Fakultet muvaffaqiyatli yangilandi! ✅');
-                
+
         } catch (\Exception $e) {
             \Log::error('Faculty update error:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()
                 ->back()
                 ->withInput()

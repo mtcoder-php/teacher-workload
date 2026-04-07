@@ -29,7 +29,7 @@ class DepartmentController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%");
             });
         }
 
@@ -49,7 +49,7 @@ class DepartmentController extends Controller
     public function create()
     {
         $faculties = Faculty::where('is_active', true)->get();
-        
+
         // VARIANT 1: Agar role relation bor bo'lsa
         try {
             $heads = User::whereHas('role', function ($query) {
@@ -82,17 +82,15 @@ class DepartmentController extends Controller
      */
     public function show(Department $department)
     {
-        $department->load(['faculty', 'head', 'teachers.user', 'subjects']);
-
-        // Statistika
-        $stats = [
-            'teachers_count' => $department->teachers()->where('is_active', true)->count(),
-            'subjects_count' => $department->subjects()->where('is_active', true)->count(),
-        ];
+        $department->load([
+            'faculty:id,name',
+            'head:id,name,email',
+        ]);
 
         return Inertia::render('Departments/Show', [
-            'department' => $department,
-            'stats' => $stats
+            'department'      => $department,
+            'teachers_count'  => $department->teachers()->where('is_active', true)->count(),
+            'directions_count'=> $department->directions()->count(),
         ]);
     }
 
@@ -102,7 +100,7 @@ class DepartmentController extends Controller
     public function edit(Department $department)
     {
         $faculties = Faculty::where('is_active', true)->get();
-        
+
         // TO'G'RILANGAN QISM - error handling qo'shildi
         try {
             // VARIANT 1: Agar User modelida 'role' relation mavjud bo'lsa
@@ -115,7 +113,7 @@ class DepartmentController extends Controller
             $heads = User::where('is_active', true)
                 ->select('id', 'name', 'email')
                 ->get();
-            
+
             // Yoki faqat teacher role'li userlar (agar teachers jadvali bor bo'lsa)
             // $heads = User::whereHas('teacher')->where('is_active', true)->get();
         }
@@ -132,7 +130,7 @@ class DepartmentController extends Controller
      */
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
-     
+
         $department->update($request->validated());
 
         return redirect()->route('departments.index')
@@ -155,7 +153,7 @@ class DepartmentController extends Controller
         return redirect()->route('departments.index')
             ->with('success', 'Kafedra muvaffaqiyatli o\'chirildi');
     }
-    
+
     /**
      * YORDAMCHI METHOD: Get users for department head selection
      */
@@ -167,7 +165,7 @@ class DepartmentController extends Controller
                 $query->where('name', 'kafedra_mudiri');
             })->where('is_active', true)->get();
         }
-        
+
         // Fallback: return all active users
         return User::where('is_active', true)
             ->select('id', 'name', 'email')

@@ -13,13 +13,13 @@ class GroupController extends Controller
     public function index(Request $request)
     {
         $query = Group::with(['direction.department']);
-         
+
         // Search by name or code
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%");
             });
         }
 
@@ -57,8 +57,8 @@ class GroupController extends Controller
                 ->orderBy('name')
                 ->get(),
             'filters' => $request->only([
-                'search', 
-                'direction_id', 
+                'search',
+                'direction_id',
                 'course',
                 'is_active',
                 'education_type',
@@ -93,19 +93,11 @@ class GroupController extends Controller
 
     public function show(Group $group)
     {
-        $group->load([
-            'direction.department',
-            'workloads' => function($query) {
-                $query->with([
-                    'subject',
-                    'teacher.user',
-                    'semester'
-                ])->latest();
-            }
-        ]);
+        $group->load(['direction:id,name,department_id', 'direction.department:id,name']);
 
         return inertia('Groups/Show', [
-            'group' => $group,
+            'group'          => $group,
+            'workloads_count'=> $group->workloads()->count(),
         ]);
     }
 
@@ -157,8 +149,8 @@ class GroupController extends Controller
         try {
             $group->update(['is_active' => !$group->is_active]);
 
-            return back()->with('success', $group->is_active 
-                ? 'Guruh faollashtirildi! ✅' 
+            return back()->with('success', $group->is_active
+                ? 'Guruh faollashtirildi! ✅'
                 : 'Guruh nofaol qilindi! ⚠️'
             );
         } catch (\Exception $e) {

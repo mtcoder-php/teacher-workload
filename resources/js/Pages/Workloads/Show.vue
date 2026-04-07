@@ -1,10 +1,7 @@
 <template>
     <AuthenticatedLayout title="Yuklama ma'lumotlari">
 
-        <!-- Header — faqat sarlavha -->
-        <template #header>
-            <h2 class="text-xl font-semibold text-gray-800">Yuklama ma'lumotlari</h2>
-        </template>
+        <template #header>Yuklama ma'lumotlari</template>
 
         <div class="max-w-5xl mx-auto space-y-5">
 
@@ -16,7 +13,13 @@
                 <!-- Yuqori qism: status banner -->
                 <div :class="['px-6 py-4 flex items-center justify-between', statusBannerClass]">
                     <div class="flex items-center gap-3">
-                        <span class="text-2xl">{{ statusIcon }}</span>
+                        <div class="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path v-if="workload.status === 'confirmed'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path v-else-if="workload.status === 'pending'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
                         <div>
                             <p class="font-semibold text-base">{{ statusLabel }}</p>
                             <p class="text-xs opacity-70 mt-0.5">{{ statusHint }}</p>
@@ -193,7 +196,7 @@
                                     ? 'bg-purple-100 text-purple-700'
                                     : 'bg-blue-100 text-blue-700'
                             ]">
-                                {{ workload.is_potok ? '👥 Potokli' : '👤 Potoksiz' }}
+                                {{ workload.is_potok ? 'Potokli' : 'Potoksiz' }}
                             </span>
                         </div>
                     </div>
@@ -349,10 +352,15 @@
             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm"
             @click.self="showModal = false"
         >
-            <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in">
+            <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
                 <div class="flex items-start gap-4 mb-6">
                     <div :class="['w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0', activeConfig.iconBg]">
-                        <span class="text-2xl">{{ activeConfig.icon }}</span>
+                        <svg class="w-6 h-6" :class="activeConfig.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path v-if="currentAction === 'submit'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            <path v-else-if="currentAction === 'approve'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <path v-else-if="currentAction === 'reject'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
                     </div>
                     <div>
                         <h3 class="text-base font-semibold text-gray-900">{{ activeConfig.title }}</h3>
@@ -405,24 +413,24 @@ const modalConfigs = computed(() => ({
     submit: {
         title:    'Tekshiruvga yuborish',
         text:     'Yuklama adminга tekshiruvga yuboriladi. Tasdiqlangandan keyin hisobotlarda ko\'rinadi.',
-        icon:     '📤',
         iconBg:   'bg-amber-100',
+        iconColor:'text-amber-600',
         btnClass: 'bg-amber-500 hover:bg-amber-600',
         btnLabel: 'Ha, yuborish',
     },
     approve: {
         title:    'Yuklamani tasdiqlash',
         text:     'Yuklama tasdiqlanadi va hisobotlarda ko\'rinadi. Davom etasizmi?',
-        icon:     '✅',
         iconBg:   'bg-green-100',
+        iconColor:'text-green-600',
         btnClass: 'bg-green-600 hover:bg-green-700',
         btnLabel: 'Ha, tasdiqlash',
     },
     reject: {
         title:    'Yuklamani qaytarish',
         text:     'Yuklama qoralamaga qaytariladi. Kafedra mudiri qayta ko\'rib chiqadi.',
-        icon:     '↩️',
         iconBg:   'bg-orange-100',
+        iconColor:'text-orange-600',
         btnClass: 'bg-orange-500 hover:bg-orange-600',
         btnLabel: 'Ha, qaytarish',
     },
@@ -431,8 +439,8 @@ const modalConfigs = computed(() => ({
         text:     props.workload.status === 'confirmed'
             ? 'Tasdiqlangan yuklama arxivlanadi. Ma\'lumotlar saqlanib qoladi, hisobotlarda ko\'rinmaydi.'
             : 'Yuklama butunlay o\'chiriladi. Bu amalni qaytarib bo\'lmaydi!',
-        icon:     '🗑️',
         iconBg:   'bg-red-100',
+        iconColor:'text-red-600',
         btnClass: 'bg-red-600 hover:bg-red-700',
         btnLabel: 'Ha, o\'chirish',
     },
@@ -487,22 +495,24 @@ const hourRows = [
 
 // ─── Status ───────────────────────────────────────────────────────────────────
 const statusMap = {
-    draft:     { label: 'Qoralama',     icon: '📝', banner: 'bg-gray-100  text-gray-800',   hint: 'Hali yuborilmagan' },
-    pending:   { label: 'Tekshiruvda',  icon: '⏳', banner: 'bg-amber-50  text-amber-800',  hint: 'Admin tasdiqlashini kutmoqda' },
-    confirmed: { label: 'Tasdiqlangan', icon: '✅', banner: 'bg-green-50  text-green-800',  hint: 'Tasdiqlangan — hisobotlarda ko\'rinadi' },
-    completed: { label: 'Tugatilgan',   icon: '🏁', banner: 'bg-blue-50   text-blue-800',   hint: 'Tugatilgan' },
+    draft:     { label: 'Qoralama',     banner: 'bg-gray-100  text-gray-800',   hint: 'Hali yuborilmagan' },
+    pending:   { label: 'Tekshiruvda',  banner: 'bg-amber-50  text-amber-800',  hint: 'Admin tasdiqlashini kutmoqda' },
+    confirmed: { label: 'Tasdiqlangan', banner: 'bg-green-50  text-green-800',  hint: 'Tasdiqlangan — hisobotlarda ko\'rinadi' },
+    completed: { label: 'Tugatilgan',   banner: 'bg-blue-50   text-blue-800',   hint: 'Tugatilgan' },
 }
 
 const statusLabel       = computed(() => statusMap[props.workload.status]?.label  ?? props.workload.status)
-const statusIcon        = computed(() => statusMap[props.workload.status]?.icon   ?? '📋')
 const statusBannerClass = computed(() => statusMap[props.workload.status]?.banner ?? 'bg-gray-100 text-gray-800')
 const statusHint        = computed(() => statusMap[props.workload.status]?.hint   ?? '')
 
 function formatDate(date) {
     if (!date) return '—'
-    return new Date(date).toLocaleString('uz-UZ', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-    })
+    const d = new Date(date)
+    const day   = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year  = d.getFullYear()
+    const hour  = String(d.getHours()).padStart(2, '0')
+    const min   = String(d.getMinutes()).padStart(2, '0')
+    return `${day}.${month}.${year} ${hour}:${min}`
 }
 </script>

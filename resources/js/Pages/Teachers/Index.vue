@@ -1,261 +1,174 @@
 <template>
-
-    <Head title="O'qituvchilar" />
-
     <AuthenticatedLayout>
         <template #header>O'qituvchilar</template>
 
-        <div class="space-y-6">
-            <!-- Filters and Actions -->
-            <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                <div class="flex flex-col sm:flex-row gap-4 flex-1 w-full lg:w-auto">
-                    <!-- Search -->
-                    <div class="flex-1 max-w-md">
-                        <input v-model="searchQuery" @input="search" type="text"
-                            placeholder="Ism yoki email bo'yicha qidirish..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">O'qituvchilar</h3>
+                        <p class="text-sm text-gray-500 mt-1">Jami {{ teachers.total || 0 }} ta o'qituvchi</p>
                     </div>
-
-                    <!-- Department Filter -->
-                    <select v-model="departmentFilter" @change="search"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="">Barcha kafedralar</option>
-                        <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                            {{ dept.name }}
-                        </option>
-                    </select>
-
-                    <!-- Employment Type Filter -->
-                    <select v-model="employmentFilter" @change="search"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="">Barcha bandlik turlari</option>
-                        <option value="main_job">Asosiy ish joyi</option>
-                        <option value="internal_part_time">O'rindoshlik (ichki-asosiy)</option>
-                        <option value="internal_additional">O'rindoshlik (ichki-qo'shimcha)</option>
-                        <option value="external_part_time">O'rindoshlik (tashqi)</option>
-                        <option value="hourly">Soatbay</option>
-                    </select>
+                    <Link href="/teachers/create"
+                          class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white
+                                 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Yangi O'qituvchi
+                    </Link>
                 </div>
-
-                <Link href="/teachers/create"
-                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2 whitespace-nowrap">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Yangi O'qituvchi</span>
-                </Link>
             </div>
 
-            <!-- Teachers Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Qidiruv</label>
+                        <input v-model="search" @input="filter" type="text" placeholder="F.I.Sh yoki email..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"/>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kafedra</label>
+                        <select v-model="deptId" @change="filter"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">Barchasi</option>
+                            <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ish turi</label>
+                        <select v-model="empType" @change="filter"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">Barchasi</option>
+                            <option value="main_job">Asosiy</option>
+                            <option value="internal_part_time">Ichki o'rindosh</option>
+                            <option value="internal_additional">Ichki qo'shimcha</option>
+                            <option value="external_part_time">Tashqi o'rindosh</option>
+                            <option value="hourly">Soatbay</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button @click="reset" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">Tozalash</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    #
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    F.I.O
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Kafedra</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Lavozim</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Bandlik</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status</th>
-                                <th
-                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Amallar</th>
-                            </tr>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">O'qituvchi</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Kafedra</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Lavozim</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Daraja</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Ish turi</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Holat</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+                        </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(teacher, index) in teachers.data" :key="teacher.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ (teachers.current_page - 1) * teachers.per_page + index + 1 }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            <div
-                                                class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                                <span class="text-indigo-600 font-semibold text-sm">
-                                                    {{ teacher.user?.name?.charAt(0) || 'O' }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ teacher.user?.name }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">{{ teacher.user?.email }}</div>
-                                        </div>
+                        <tr v-for="teacher in teachers.data" :key="teacher.id" class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold flex-shrink-0">
+                                        {{ teacher.user?.name?.charAt(0)?.toUpperCase() ?? '?' }}
                                     </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ teacher.department?.name }}</div>
-                                    <div class="text-sm text-gray-500">{{ teacher.department?.faculty?.name }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ teacher.position || '—' }}
-                                </td>
-                                <!-- Table Badge -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span :class="{
-                                        'bg-green-100 text-green-800': teacher.employment_type === 'main_job',
-                                        'bg-blue-100 text-blue-800': teacher.employment_type === 'internal_part_time',
-                                        'bg-purple-100 text-purple-800': teacher.employment_type === 'internal_additional',
-                                        'bg-yellow-100 text-yellow-800': teacher.employment_type === 'external_part_time',
-                                        'bg-orange-100 text-orange-800': teacher.employment_type === 'hourly'
-                                    }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                        {{ getEmploymentTypeName(teacher.employment_type) }}
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ teacher.user?.name }}</div>
+                                        <div class="text-sm text-gray-500">{{ teacher.user?.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{{ teacher.department?.name || '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{{ teacher.position || '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ teacher.academic_degree || '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                          :class="empBadge(teacher.employment_type)">
+                                        {{ empLabel(teacher.employment_type) }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span :class="teacher.is_active
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'"
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                        {{ teacher.is_active ? 'Aktiv' : 'Nofaol' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                          :class="teacher.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                        {{ teacher.is_active ? 'Faol' : 'Nofaol' }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    <Link :href="`/teachers/${teacher.id}`" class="text-blue-600 hover:text-blue-900">
-                                    Ko'rish
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <Link :href="`/teachers/${teacher.id}`" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Ko'rish">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </Link>
-                                    <Link :href="`/teachers/${teacher.id}/edit`"
-                                        class="text-indigo-600 hover:text-indigo-900">
-                                    Tahrirlash
+                                    <Link :href="`/teachers/${teacher.id}/edit`" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Tahrirlash">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </Link>
-                                    <button @click="deleteTeacher(teacher)" class="text-red-600 hover:text-red-900">
-                                        O'chirish
+                                    <button @click="askDelete(teacher)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="O'chirish">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
-                                </td>
-                            </tr>
-
-                            <!-- Empty State -->
-                            <tr v-if="teachers.data.length === 0">
-                                <td colspan="7" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-500">
-                                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                        <p class="text-lg font-medium">O'qituvchilar topilmadi</p>
-                                        <p class="text-sm">Yangi o'qituvchi qo'shish uchun yuqoridagi tugmani bosing</p>
-                                    </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="!teachers.data?.length">
+                            <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">O'qituvchi topilmadi</td>
+                        </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Pagination -->
-                <div v-if="teachers.data.length > 0" class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                    <div class="flex items-center justify-between">
-                        <div class="text-sm text-gray-700">
-                            Jami <span class="font-medium">{{ teachers.total }}</span> ta o'qituvchi
-                        </div>
-                        <div class="flex space-x-2">
-                            <Link v-for="(link, index) in teachers.links" :key="index" :href="link.url || '#'" :class="[
-                                'px-3 py-1 rounded border',
-                                link.active
-                                    ? 'bg-indigo-600 text-white border-indigo-600'
-                                    : link.url
-                                        ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                        : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
-                            ]" :preserve-scroll="true" v-html="link.label" />
+                <div v-if="teachers.data?.length" class="px-6 py-4 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-sm text-gray-600">{{ teachers.from }}-{{ teachers.to }} / {{ teachers.total }} ta</p>
+                        <div class="flex gap-1 flex-wrap">
+                            <template v-for="(link, i) in teachers.links" :key="i">
+                                <Link v-if="link.url" :href="link.url" :class="['px-3 py-2 rounded-lg text-sm font-medium transition-colors', link.active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']" v-html="link.label"/>
+                                <span v-else class="px-3 py-2 rounded-lg text-sm bg-gray-50 text-gray-400 cursor-not-allowed" v-html="link.label"/>
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">O'qituvchini o'chirish</h3>
-                <p class="text-gray-600 mb-6">
-                    <strong>{{ teacherToDelete?.user?.name }}</strong> o'qituvchisini o'chirishni xohlaysizmi? Bu amal
-                    user
-                    akkauntini ham o'chiradi va qaytarib bo'lmaydi.
-                </p>
-                <div class="flex justify-end space-x-3">
-                    <button @click="showDeleteModal = false"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                        Bekor qilish
-                    </button>
-                    <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        O'chirish
-                    </button>
-                </div>
-            </div>
-        </div>
+        <DeleteModal :show="!!deleteTarget" title="O'qituvchini o'chirish"
+                     :item-name="deleteTarget?.user?.name"
+                     :loading="deleting" @confirm="doDelete" @cancel="deleteTarget = null"/>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import DeleteModal from '@/Components/DeleteModal.vue'
 
-const props = defineProps({
-    teachers: Object,
-    departments: Array,
-    filters: Object,
-});
+const props = defineProps({ teachers: Object, departments: Array, filters: Object })
 
-const searchQuery = ref(props.filters?.search || '');
-const departmentFilter = ref(props.filters?.department_id || '');
-const employmentFilter = ref(props.filters?.employment_type || '');
-const showDeleteModal = ref(false);
-const teacherToDelete = ref(null);
+const search   = ref(props.filters?.search || '')
+const deptId   = ref(props.filters?.department_id || '')
+const empType  = ref(props.filters?.employment_type || '')
+const deleting = ref(false)
+const deleteTarget = ref(null)
 
-const search = () => {
-    router.get('/teachers',
-        {
-            search: searchQuery.value || undefined,
-            department_id: departmentFilter.value || undefined,
-            employment_type: employmentFilter.value || undefined
-        },
-        {
-            preserveState: true,
-            replace: true,
-        }
-    );
-};
-
-const getEmploymentTypeName = (type) => {
-    const types = {
-        'main_job': 'Asosiy ish joyi',
-        'internal_part_time': 'O\'rindoshlik (ichki-asosiy)',
-        'internal_additional': 'O\'rindoshlik (ichki-qo\'shimcha)',
-        'external_part_time': 'O\'rindoshlik (tashqi)',
-        'hourly': 'Soatbay'
-    };
-    return types[type] || 'Noma\'lum';
-};
-
-const deleteTeacher = (teacher) => {
-    teacherToDelete.value = teacher;
-    showDeleteModal.value = true;
-};
-
-const confirmDelete = () => {
-    router.delete(`/teachers/${teacherToDelete.value.id}`, {
+function filter() {
+    router.get('/teachers', { search: search.value||undefined, department_id: deptId.value||undefined, employment_type: empType.value||undefined },
+        { preserveState: true, replace: true })
+}
+function reset() { search.value=''; deptId.value=''; empType.value=''; filter() }
+function askDelete(item) { deleteTarget.value = item }
+function doDelete() {
+    deleting.value = true
+    router.delete(`/teachers/${deleteTarget.value.id}`, {
         preserveScroll: true,
-        onSuccess: () => {
-            showDeleteModal.value = false;
-            teacherToDelete.value = null;
-        },
-    });
-};
+        onFinish: () => { deleting.value = false; deleteTarget.value = null },
+    })
+}
+function empLabel(t) {
+    return { main_job:"Asosiy", internal_part_time:"Ichki o'rindosh",
+        internal_additional:"Ichki qo'sh.", external_part_time:"Tashqi", hourly:"Soatbay" }[t] ?? t
+}
+function empBadge(t) {
+    return { main_job:"bg-green-100 text-green-800", internal_part_time:"bg-blue-100 text-blue-800",
+        internal_additional:"bg-purple-100 text-purple-800", external_part_time:"bg-yellow-100 text-yellow-800",
+        hourly:"bg-orange-100 text-orange-800" }[t] ?? "bg-gray-100 text-gray-700"
+}
 </script>

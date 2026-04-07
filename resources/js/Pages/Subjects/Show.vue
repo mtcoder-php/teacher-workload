@@ -1,38 +1,42 @@
 <template>
     <Head :title="subject.name" />
-    
+
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold text-lg">{{ subject.code.substring(0, 2) }}</span>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900">{{ subject.name }}</h2>
-                    <p class="text-sm text-gray-600">{{ subject.code }}</p>
-                </div>
-            </div>
-        </template>
+        <template #header>{{ subject.name }}</template>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            
-            <!-- Orqaga va Tahrirlash tugmalari -->
+
+            <!-- Orqaga va tugmalar -->
             <div class="flex items-center justify-between">
-                <Link href="/subjects" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                <Link href="/subjects"
+                      class="flex items-center space-x-1.5 text-sm text-gray-600 hover:text-gray-900">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
-                    <span class="font-medium">Orqaga qaytish</span>
+                    <span>Orqaga</span>
                 </Link>
-                <Link :href="`/subjects/${subject.id}/edit`"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center space-x-2 shadow-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>Tahrirlash</span>
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Link :href="`/subjects/${subject.id}/edit`"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                                 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Tahrirlash
+                    </Link>
+                    <button @click="deleteTarget = subject"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
+                                   bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        O'chirish
+                    </button>
+                </div>
             </div>
-            
+
             <!-- Stats Cards -->
             <div class="grid grid-cols-4 gap-4">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
@@ -95,7 +99,7 @@
             <div class="grid grid-cols-3 gap-6">
                 <!-- Left Column -->
                 <div class="col-span-2 space-y-6">
-                    
+
                     <!-- Asosiy Ma'lumotlar -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-200">
@@ -123,7 +127,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Fan turi</p>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                                        :class="{
+                                          :class="{
                                             'bg-green-100 text-green-700': subject.subject_type === 'asosiy',
                                             'bg-blue-100 text-blue-700': subject.subject_type === 'yordamchi',
                                             'bg-purple-100 text-purple-700': subject.subject_type === 'ixtiyoriy'
@@ -138,7 +142,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Holat</p>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                                        :class="subject.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                                          :class="subject.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
                                         <span class="w-2 h-2 rounded-full mr-2" :class="subject.is_active ? 'bg-green-500' : 'bg-red-500'"></span>
                                         {{ subject.is_active ? 'Faol' : 'Nofaol' }}
                                     </span>
@@ -273,7 +277,7 @@
 
                 <!-- Right Column -->
                 <div class="space-y-6">
-                    
+
                     <!-- Qo'shimcha Soatlar -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-gray-200">
@@ -351,16 +355,36 @@
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <DeleteModal :show="!!deleteTarget"
+                 title="Fanni o'chirish"
+                 :item-name="deleteTarget?.name"
+                 :loading="deleting"
+                 @confirm="doDelete"
+                 @cancel="deleteTarget = null"/>
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import DeleteModal from '@/Components/DeleteModal.vue';
 
 defineProps({
     subject: Object,
     stats: Object,
 });
+
+const deleting     = ref(false)
+const deleteTarget = ref(null)
+
+function doDelete() {
+    deleting.value = true
+    router.delete(`/subjects/${deleteTarget.value.id}`, {
+        onSuccess: () => router.visit('/subjects'),
+        onFinish:  () => { deleting.value = false; deleteTarget.value = null },
+    })
+}
 
 const getSubjectTypeLabel = (type) => {
     const types = {
@@ -391,7 +415,7 @@ const getControlTypeLabel = (type) => {
 
 const formatDate = (date) => {
     if (!date) return '';
-    
+
     const [year, month, day] = date.split('T')[0].split('-');
     return `${day}.${month}.${year}`;
 };

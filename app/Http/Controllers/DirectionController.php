@@ -76,10 +76,11 @@ class DirectionController extends Controller
 
     public function show(Direction $direction)
     {
-        $direction->load(['department.faculty', 'groups']);
+        $direction->load(['department:id,name,faculty_id', 'department.faculty:id,name']);
 
         return Inertia::render('Directions/Show', [
-            'direction' => $direction
+            'direction'    => $direction,
+            'groups_count' => $direction->groups()->count(),
         ]);
     }
 

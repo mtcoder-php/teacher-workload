@@ -52,18 +52,13 @@ class AcademicYearController extends Controller
 
     public function show(AcademicYear $academicYear)
     {
-        $academicYear->load(['semesters' => function ($query) {
-            $query->withCount('workloads')->latest();
-        }]);
-
-        $stats = [
-            'total_semesters' => $academicYear->semesters->count(),
-            'total_workloads' => $academicYear->semesters->sum('workloads_count'),
-        ];
-
         return inertia('AcademicYears/Show', [
-            'academicYear' => $academicYear,
-            'stats' => $stats
+            'academicYear'    => $academicYear,
+            'workloads_count' => \App\Models\Workload::where('academic_year_id', $academicYear->id)->count(),
+            'confirmed_count' => \App\Models\Workload::where('academic_year_id', $academicYear->id)
+                ->where('status', 'confirmed')->count(),
+            'teachers_count'  => \App\Models\Workload::where('academic_year_id', $academicYear->id)
+                ->distinct('teacher_id')->count('teacher_id'),
         ]);
     }
 

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\Department;
+use App\Models\Direction;
 use App\Models\Faculty;
 use App\Models\Group;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Workload;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -19,269 +19,195 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Admin uchun
-        if ($user->isAdmin()) {
-            return $this->adminDashboard();
-        }
+        if ($user->isAdmin())          return $this->adminDashboard();
+        if ($user->isDean())           return $this->deanDashboard();
+        if ($user->isDepartmentHead()) return $this->departmentHeadDashboard();
+        if ($user->isTeacher())        return $this->teacherDashboard();
 
-        // Dekan uchun
-        if ($user->isDean()) {
-            return $this->deanDashboard();
-        }
-
-        // Kafedra mudiri uchun
-        if ($user->isDepartmentHead()) {
-            return $this->departmentHeadDashboard();
-        }
-
-        // O'qituvchi uchun
-        if ($user->isTeacher()) {
-            return $this->teacherDashboard();
-        }
-
-        // Default dashboard
         return Inertia::render('Dashboard', [
-            'stats' => [
-                'total_workloads' => 0,
-                'teachers_count' => 0,
-                'active_teachers' => 0,
-                'subjects_count' => 0,
-                'active_subjects' => 0,
-                'pending_approvals' => 0,
-            ],
-            'recentActivities' => [],
+            'stats' => [], 'recentActivities' => [], 'role' => 'default',
         ]);
     }
 
+    // ─── Admin ────────────────────────────────────────────────────────────────
     protected function adminDashboard()
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $yearId     = $activeYear?->id;
+
+        $wq = fn() => Workload::when($yearId, fn($q) => $q->where('academic_year_id', $yearId));
+
         $stats = [
-            'total_workloads' => Workload::count(),
-            'teachers_count' => Teacher::where('is_active', true)->count(),
-            'active_teachers' => Teacher::where('is_active', true)->count(),
-            'subjects_count' => Subject::where('is_active', true)->count(),
-            'active_subjects' => Subject::where('is_active', true)->count(),
-            
-            // ✅ TO'G'RILANDI: Barcha tasdiqlanmagan yuklamalar
-            'pending_approvals' => Workload::where('status', '!=', 'approved')
-                ->orWhereNull('approved_at')
-                ->count(),
+            'faculties_count'    => Faculty::where('is_active', true)->count(),
+            'departments_count'  => Department::where('is_active', true)->count(),
+            'teachers_count'     => Teacher::where('is_active', true)->count(),
+            'groups_count'       => Group::where('is_active', true)->count(),
+            'subjects_count'     => Subject::where('is_active', true)->count(),
+            'workloads_total'    => $wq()->count(),
+            'workloads_draft'    => $wq()->where('status', 'draft')->count(),
+            'workloads_pending'  => $wq()->where('status', 'pending')->count(),
+            'workloads_confirmed'=> $wq()->where('status', 'confirmed')->count(),
         ];
 
-        // So'nggi faoliyatlar
-        $recentActivities = Workload::with(['teacher.user', 'subject'])
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($workload) {
-                return [
-                    'id' => $workload->id,
-                    'title' => 'Yangi yuklama qo\'shildi',
-                    'description' => $workload->teacher->user->name . ' - ' . $workload->subject->name,
-                    'time' => $workload->created_at->diffForHumans(),
-                    'status' => $workload->status,
-                ];
-            });
+        $recent = Workload::with(['teacher.user:id,name', 'subject:id,name'])
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId))
+            ->latest()->take(8)->get()
+            ->map(fn($w) => [
+                'id'          => $w->id,
+                'teacher'     => $w->teacher?->user?->name ?? '—',
+                'subject'     => $w->subject?->name ?? '—',
+                'status'      => $w->status,
+                'total_hours' => round($w->total_hours, 1),
+                'time'        => $w->created_at->diffForHumans(),
+            ]);
 
         return Inertia::render('Dashboard', [
-            'stats' => $stats,
-            'recentActivities' => $recentActivities,
+            'stats'            => $stats,
+            'recentActivities' => $recent,
+            'activeYear'       => $activeYear?->name,
+            'role'             => 'admin',
         ]);
     }
 
+    // ─── Dekan ────────────────────────────────────────────────────────────────
     protected function deanDashboard()
     {
-        $user = Auth::user();
-        
-        // Dekan boshqaradigan fakultet
+        $user    = Auth::user();
         $faculty = Faculty::where('dean_id', $user->id)->first();
+        $yearId  = AcademicYear::where('is_active', true)->value('id');
 
         if (!$faculty) {
             return Inertia::render('Dashboard', [
-                'stats' => [
-                    'total_workloads' => 0,
-                    'teachers_count' => 0,
-                    'active_teachers' => 0,
-                    'subjects_count' => 0,
-                    'active_subjects' => 0,
-                    'pending_approvals' => 0,
-                ],
-                'recentActivities' => [],
+                'stats' => [], 'recentActivities' => [], 'role' => 'dekan',
             ]);
         }
 
+        $deptIds = Department::where('faculty_id', $faculty->id)->pluck('id');
+        $wq = fn() => Workload::whereIn('department_id', $deptIds)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId));
+
         $stats = [
-            'total_workloads' => Workload::whereHas('teacher.department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })->count(),
-            
-            'teachers_count' => Teacher::whereHas('department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })->where('is_active', true)->count(),
-            
-            'active_teachers' => Teacher::whereHas('department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })->where('is_active', true)->count(),
-            
-            'subjects_count' => Subject::whereHas('department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })->where('is_active', true)->count(),
-            
-            'active_subjects' => Subject::whereHas('department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })->where('is_active', true)->count(),
-            
-            // ✅ TO'G'RILANDI
-            'pending_approvals' => Workload::whereHas('teacher.department', function ($query) use ($faculty) {
-                $query->where('faculty_id', $faculty->id);
-            })
-            ->where(function($query) {
-                $query->where('status', '!=', 'approved')
-                      ->orWhereNull('approved_at');
-            })
-            ->count(),
+            'departments_count'  => $deptIds->count(),
+            'teachers_count'     => Teacher::whereIn('department_id', $deptIds)->where('is_active', true)->count(),
+            'subjects_count'     => Subject::whereIn('department_id', $deptIds)->where('is_active', true)->count(),
+            'workloads_total'    => $wq()->count(),
+            'workloads_pending'  => $wq()->where('status', 'pending')->count(),
+            'workloads_confirmed'=> $wq()->where('status', 'confirmed')->count(),
         ];
 
-        $recentActivities = Workload::whereHas('teacher.department', function ($query) use ($faculty) {
-            $query->where('faculty_id', $faculty->id);
-        })
-        ->with(['teacher.user', 'subject'])
-        ->latest()
-        ->take(5)
-        ->get()
-        ->map(function ($workload) {
-            return [
-                'id' => $workload->id,
-                'title' => $workload->subject->name,
-                'description' => $workload->teacher->user->name . ' - ' . $workload->status_name,
-                'time' => $workload->created_at->diffForHumans(),
-            ];
-        });
+        $recent = Workload::with(['teacher.user:id,name', 'subject:id,name'])
+            ->whereIn('department_id', $deptIds)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId))
+            ->latest()->take(8)->get()
+            ->map(fn($w) => [
+                'id'          => $w->id,
+                'teacher'     => $w->teacher?->user?->name ?? '—',
+                'subject'     => $w->subject?->name ?? '—',
+                'status'      => $w->status,
+                'total_hours' => round($w->total_hours, 1),
+                'time'        => $w->created_at->diffForHumans(),
+            ]);
 
         return Inertia::render('Dashboard', [
-            'stats' => $stats,
-            'recentActivities' => $recentActivities,
+            'stats'            => $stats,
+            'recentActivities' => $recent,
+            'activeYear'       => AcademicYear::where('is_active', true)->value('name'),
+            'role'             => 'dekan',
+            'context'          => $faculty->name,
         ]);
     }
 
+    // ─── Kafedra mudiri ───────────────────────────────────────────────────────
     protected function departmentHeadDashboard()
     {
-        $user = Auth::user();
-        
-        // Kafedra mudiri boshqaradigan kafedra
+        $user       = Auth::user();
         $department = Department::where('head_id', $user->id)->first();
+        $yearId     = AcademicYear::where('is_active', true)->value('id');
 
         if (!$department) {
             return Inertia::render('Dashboard', [
-                'stats' => [
-                    'total_workloads' => 0,
-                    'teachers_count' => 0,
-                    'active_teachers' => 0,
-                    'subjects_count' => 0,
-                    'active_subjects' => 0,
-                    'pending_approvals' => 0,
-                ],
-                'recentActivities' => [],
+                'stats' => [], 'recentActivities' => [], 'role' => 'kafedra_mudiri',
             ]);
         }
 
+        $wq = fn() => Workload::where('department_id', $department->id)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId));
+
         $stats = [
-            'total_workloads' => Workload::whereHas('teacher', function ($query) use ($department) {
-                $query->where('department_id', $department->id);
-            })->count(),
-            
-            'teachers_count' => $department->teachers()->where('is_active', true)->count(),
-            'active_teachers' => $department->teachers()->where('is_active', true)->count(),
-            'subjects_count' => $department->subjects()->where('is_active', true)->count(),
-            'active_subjects' => $department->subjects()->where('is_active', true)->count(),
-            
-            // ✅ TO'G'RILANDI
-            'pending_approvals' => Workload::whereHas('teacher', function ($query) use ($department) {
-                $query->where('department_id', $department->id);
-            })
-            ->where(function($query) {
-                $query->where('status', '!=', 'approved')
-                      ->orWhereNull('approved_at');
-            })
-            ->count(),
+            'teachers_count'     => Teacher::where('department_id', $department->id)->where('is_active', true)->count(),
+            'subjects_count'     => Subject::where('department_id', $department->id)->where('is_active', true)->count(),
+            'directions_count'   => Direction::where('department_id', $department->id)->count(),
+            'workloads_total'    => $wq()->count(),
+            'workloads_draft'    => $wq()->where('status', 'draft')->count(),
+            'workloads_pending'  => $wq()->where('status', 'pending')->count(),
+            'workloads_confirmed'=> $wq()->where('status', 'confirmed')->count(),
         ];
 
-        $recentActivities = Workload::whereHas('teacher', function ($query) use ($department) {
-            $query->where('department_id', $department->id);
-        })
-        ->with(['teacher.user', 'subject', 'group'])
-        ->latest()
-        ->take(5)
-        ->get()
-        ->map(function ($workload) {
-            return [
-                'id' => $workload->id,
-                'title' => $workload->subject->name,
-                'description' => $workload->teacher->user->name . ' - ' . $workload->group->name,
-                'time' => $workload->created_at->diffForHumans(),
-            ];
-        });
+        $recent = Workload::with(['teacher.user:id,name', 'subject:id,name'])
+            ->where('department_id', $department->id)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId))
+            ->latest()->take(8)->get()
+            ->map(fn($w) => [
+                'id'          => $w->id,
+                'teacher'     => $w->teacher?->user?->name ?? '—',
+                'subject'     => $w->subject?->name ?? '—',
+                'status'      => $w->status,
+                'total_hours' => round($w->total_hours, 1),
+                'time'        => $w->created_at->diffForHumans(),
+            ]);
 
         return Inertia::render('Dashboard', [
-            'stats' => $stats,
-            'recentActivities' => $recentActivities,
+            'stats'            => $stats,
+            'recentActivities' => $recent,
+            'activeYear'       => AcademicYear::where('is_active', true)->value('name'),
+            'role'             => 'kafedra_mudiri',
+            'context'          => $department->name,
         ]);
     }
 
+    // ─── O'qituvchi ───────────────────────────────────────────────────────────
     protected function teacherDashboard()
     {
-        $user = Auth::user();
+        $user    = Auth::user();
         $teacher = $user->teacher;
+        $yearId  = AcademicYear::where('is_active', true)->value('id');
 
         if (!$teacher) {
             return Inertia::render('Dashboard', [
-                'stats' => [
-                    'total_workloads' => 0,
-                    'teachers_count' => 0,
-                    'active_teachers' => 0,
-                    'subjects_count' => 0,
-                    'active_subjects' => 0,
-                    'pending_approvals' => 0,
-                ],
-                'recentActivities' => [],
+                'stats' => [], 'recentActivities' => [], 'role' => 'oqituvchi',
             ]);
         }
 
-        // Joriy semestr yuklamalari
-        $currentWorkloads = Workload::where('teacher_id', $teacher->id)
-            ->whereHas('semester', function ($query) {
-                $query->where('is_current', true);
-            })
-            ->with(['subject', 'semester', 'group'])
-            ->get();
+        $wq = fn() => Workload::where('teacher_id', $teacher->id)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId));
 
         $stats = [
-            'total_workloads' => $currentWorkloads->sum('total_hours'),
-            'teachers_count' => 0,
-            'active_teachers' => 0,
-            'subjects_count' => $currentWorkloads->count(),
-            'active_subjects' => $currentWorkloads->count(),
-            
-            // ✅ TO'G'RILANDI
-            'pending_approvals' => $currentWorkloads->filter(function($workload) {
-                return $workload->status !== 'approved' || is_null($workload->approved_at);
-            })->count(),
+            'workloads_total'    => $wq()->count(),
+            'workloads_draft'    => $wq()->where('status', 'draft')->count(),
+            'workloads_pending'  => $wq()->where('status', 'pending')->count(),
+            'workloads_confirmed'=> $wq()->where('status', 'confirmed')->count(),
+            'total_hours'        => round((float) $wq()->sum('total_hours'), 1),
         ];
 
-        $recentActivities = $currentWorkloads->take(5)->map(function ($workload) {
-            return [
-                'id' => $workload->id,
-                'title' => $workload->subject->name,
-                'description' => $workload->group->name . ' - ' . $workload->total_hours . ' soat',
-                'time' => $workload->created_at->diffForHumans(),
-                'status' => $workload->status_name,
-            ];
-        });
+        $recent = Workload::with(['subject:id,name'])
+            ->where('teacher_id', $teacher->id)
+            ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId))
+            ->latest()->take(8)->get()
+            ->map(fn($w) => [
+                'id'          => $w->id,
+                'teacher'     => $user->name,
+                'subject'     => $w->subject?->name ?? '—',
+                'status'      => $w->status,
+                'total_hours' => round($w->total_hours, 1),
+                'time'        => $w->created_at->diffForHumans(),
+            ]);
 
         return Inertia::render('Dashboard', [
-            'stats' => $stats,
-            'recentActivities' => $recentActivities,
-            'currentWorkloads' => $currentWorkloads,
+            'stats'            => $stats,
+            'recentActivities' => $recent,
+            'activeYear'       => AcademicYear::where('is_active', true)->value('name'),
+            'role'             => 'oqituvchi',
+            'context'          => $teacher->department?->name ?? '',
         ]);
     }
 }
