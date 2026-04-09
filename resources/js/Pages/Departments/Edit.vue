@@ -1,197 +1,118 @@
 <template>
-    <Head title="Kafedrani tahrirlash"/>
     <AuthenticatedLayout>
         <template #header>Kafedrani tahrirlash</template>
 
         <div class="max-w-3xl mx-auto">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <!-- Header -->
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xl font-semibold text-gray-800">Kafedra ma'lumotlari</h2>
-                        <Link
-                            :href="`/departments/${department.id}`"
-                            class="text-sm text-indigo-600 hover:text-indigo-900"
-                        >
-                            Ko'rish
-                        </Link>
+            <div class="mb-6">
+                <Link href="/departments"
+                      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+                    <Icon :size="20" class="mr-1"><ArrowBackOutline /></Icon>
+                    Orqaga qaytish
+                </Link>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Kafedra ma'lumotlari</h3>
+                        <p class="text-sm text-gray-500 mt-1">{{ department.name }}</p>
                     </div>
+                    <Link :href="`/departments/${department.id}`"
+                          class="text-sm text-indigo-600 hover:text-indigo-700">Ko'rish →</Link>
                 </div>
 
-                <!-- Form -->
                 <form @submit.prevent="submit" class="p-6 space-y-6">
-                    <!-- Faculty Selection -->
+                    <!-- Fakultet -->
                     <div>
-                        <label for="faculty_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
                             Fakultet <span class="text-red-500">*</span>
                         </label>
-                        <select
-                            id="faculty_id"
-                            v-model="form.faculty_id"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            :class="{ 'border-red-500': form.errors.faculty_id }"
-                            required
-                        >
+                        <select v-model="form.faculty_id"
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                :class="{ 'border-red-500': form.errors.faculty_id }" required>
                             <option :value="null">Fakultet tanlang</option>
-                            <option v-for="faculty in faculties" :key="faculty.id" :value="faculty.id">
-                                {{ faculty.name }}
-                            </option>
+                            <option v-for="f in faculties" :key="f.id" :value="f.id">{{ f.name }}</option>
                         </select>
-                        <p v-if="form.errors.faculty_id" class="mt-1 text-sm text-red-600">
-                            {{ form.errors.faculty_id }}
-                        </p>
+                        <p v-if="form.errors.faculty_id" class="mt-1 text-sm text-red-600">{{ form.errors.faculty_id }}</p>
                     </div>
 
-                    <!-- Department Name -->
+                    <!-- Nomi -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
                             Kafedra nomi <span class="text-red-500">*</span>
                         </label>
-                        <input
-                            id="name"
-                            v-model="form.name"
-                            type="text"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            :class="{ 'border-red-500': form.errors.name }"
-                            placeholder="Masalan: Dasturiy injiniring kafedrasi"
-                            required
-                        />
-                        <p v-if="form.errors.name" class="mt-1 text-sm text-red-600">
-                            {{ form.errors.name }}
-                        </p>
+                        <input v-model="form.name" type="text"
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               :class="{ 'border-red-500': form.errors.name }" required />
+                        <p v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</p>
                     </div>
 
-                    <!-- Department Code -->
+                    <!-- Kodi -->
                     <div>
-                        <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
                             Kafedra kodi <span class="text-red-500">*</span>
                         </label>
-                        <input
-                            id="code"
-                            v-model="form.code"
-                            type="text"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            :class="{ 'border-red-500': form.errors.code }"
-                            placeholder="Masalan: DI"
-                            required
-                        />
-                        <p v-if="form.errors.code" class="mt-1 text-sm text-red-600">
-                            {{ form.errors.code }}
-                        </p>
+                        <input v-model="form.code" type="text"
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                               :class="{ 'border-red-500': form.errors.code }" required />
+                        <p v-if="form.errors.code" class="mt-1 text-sm text-red-600">{{ form.errors.code }}</p>
                     </div>
 
-                    <!-- Head Selection -->
+                    <!-- Kafedra mudiri -->
                     <div>
-                        <label for="head_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kafedra mudiri
-                        </label>
-                        <select
-                            id="head_id"
-                            v-model="form.head_id"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            :class="{ 'border-red-500': form.errors.head_id }"
-                        >
-                            <option :value="null">Mudir tanlang</option>
-                            <option v-for="head in heads" :key="head.id" :value="head.id">
-                                {{ head.name }} ({{ head.email }})
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kafedra mudiri</label>
+                        <select v-model="form.head_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option :value="null">Mudir tanlanmagan</option>
+                            <option v-for="h in heads" :key="h.id" :value="h.id">
+                                {{ h.name }} ({{ h.email }})
                             </option>
                         </select>
-                        <p v-if="form.errors.head_id" class="mt-1 text-sm text-red-600">
-                            {{ form.errors.head_id }}
-                        </p>
+                        <p v-if="form.errors.head_id" class="mt-1 text-sm text-red-600">{{ form.errors.head_id }}</p>
                     </div>
 
-                    <!-- Description -->
+                    <!-- Tavsif -->
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                            Tavsif
-                        </label>
-                        <textarea
-                            id="description"
-                            v-model="form.description"
-                            rows="4"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            :class="{ 'border-red-500': form.errors.description }"
-                            placeholder="Kafedra haqida qisqacha ma'lumot..."
-                        ></textarea>
-                        <p v-if="form.errors.description" class="mt-1 text-sm text-red-600">
-                            {{ form.errors.description }}
-                        </p>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tavsif</label>
+                        <textarea v-model="form.description" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
+                        <p v-if="form.errors.description" class="mt-1 text-sm text-red-600">{{ form.errors.description }}</p>
                     </div>
 
-                    <!-- Active Status -->
-                    <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                        <input
-                            v-model="form.is_active"
-                            type="checkbox"
-                            id="is_active"
-                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                        />
-                        <label for="is_active" class="text-sm font-medium text-gray-700 cursor-pointer">
-                            Kafedra faol
-                        </label>
-                        <span class="text-xs text-gray-500 ml-auto">
-                            {{ form.is_active ? 'Faol' : 'Nofaol' }}
-                        </span>
+                    <!-- Faol -->
+                    <div class="flex items-center">
+                        <input v-model="form.is_active" type="checkbox" id="is_active"
+                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
+                        <label for="is_active" class="ml-2 block text-sm text-gray-700">Kafedra faol</label>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                        <Link
-                            href="/departments"
-                            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center space-x-2"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            <span>Orqaga</span>
+                    <!-- Tugmalar -->
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                        <Link href="/departments"
+                              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Bekor qilish
                         </Link>
-                        <button
-                            type="submit"
-                            :disabled="form.processing"
-                            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                        >
-                            <svg v-if="form.processing" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span>{{ form.processing ? 'Saqlanmoqda...' : 'Saqlash' }}</span>
+                        <button type="submit" :disabled="form.processing"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors
+                                       disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2">
+                            <Icon v-if="form.processing" :size="18" class="animate-spin"><RefreshOutline /></Icon>
+                            <Icon v-else :size="18"><SaveOutline /></Icon>
+                            {{ form.processing ? 'Saqlanmoqda...' : 'Saqlash' }}
                         </button>
                     </div>
                 </form>
-            </div>
-
-            <!-- Info Card -->
-            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start space-x-3">
-                    <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="flex-1">
-                        <h4 class="text-sm font-medium text-blue-900 mb-1">Ma'lumot</h4>
-                        <p class="text-sm text-blue-700">
-                            Kafedra ma'lumotlarini o'zgartirayotganingizda ehtiyot bo'ling. 
-                            Barcha o'zgarishlar darhol tizimda aks etadi.
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { useForm, Link, Head } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { useForm, Link } from '@inertiajs/vue3'
+import { Icon } from '@vicons/utils'
+import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
-const props = defineProps({
-    department: Object,
-    faculties: Array,
-    heads: Array,
-});
+const props = defineProps({ department: Object, faculties: Array, heads: Array })
 
 const form = useForm({
     faculty_id: props.department.faculty_id || null,
@@ -200,11 +121,7 @@ const form = useForm({
     head_id: props.department.head_id || null,
     description: props.department.description || '',
     is_active: props.department.is_active ?? true,
-});
+})
 
-const submit = () => {
-    form.put(`/departments/${props.department.id}`, {
-        preserveScroll: true,
-    });
-};
+const submit = () => form.put(`/departments/${props.department.id}`, { preserveScroll: true })
 </script>
