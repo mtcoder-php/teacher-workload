@@ -34,7 +34,7 @@ class DirectionController extends Controller
             $query->where('degree_type', $request->degree_type);
         }
 
-        $directions = $query->latest()->paginate(15)->withQueryString();
+        $directions = $query->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('Directions/Index', [
             'directions' => $directions,

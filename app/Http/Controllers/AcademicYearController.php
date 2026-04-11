@@ -13,7 +13,7 @@ class AcademicYearController extends Controller
     public function index()
     {
         $academicYears = AcademicYear::latest()
-            ->paginate(15);
+            ->paginate(10);
 
         return inertia('AcademicYears/Index', [
             'academicYears' => $academicYears

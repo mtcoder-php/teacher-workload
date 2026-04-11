@@ -48,7 +48,7 @@ class GroupController extends Controller
             $query->where('education_language', $request->education_language);
         }
 
-        $groups = $query->latest()->paginate(15)->withQueryString();
+        $groups = $query->latest()->paginate(10)->withQueryString();
 
         return inertia('Groups/Index', [
             'groups' => $groups,

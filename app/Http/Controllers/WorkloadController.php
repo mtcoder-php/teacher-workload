@@ -52,7 +52,7 @@ class WorkloadController extends Controller
         }
 
         $workloads = $query->with(['groups', 'teacher.user', 'subject', 'direction', 'academicYear'])
-            ->latest()->paginate(15)->withQueryString();
+            ->latest()->paginate(10)->withQueryString();
 
         $currentAcademicYear = AcademicYear::where('is_active', true)->first();
 

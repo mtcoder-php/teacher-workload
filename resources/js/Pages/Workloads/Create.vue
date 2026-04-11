@@ -4,10 +4,6 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
-// Step indikator
-const currentStep = ref(0)
-const stepLabels = ['Asosiy ma\'lumotlar', 'Guruhlar', 'Soatlar', 'Izoh va saqlash']
-
 const props = defineProps({
     departments: Array,
     teachers: Array,
@@ -176,16 +172,6 @@ const totalHours = computed(() => {
         Number(form.consultation_hours || 0);
 });
 
-// Step ni avtomatik oldinga siljitish — form to'lganda
-watch(() => [form.department_id, form.direction_id, form.subject_id, form.teacher_id, form.academic_year_id], () => {
-    if (form.department_id && form.direction_id && form.subject_id && form.teacher_id && form.academic_year_id) {
-        if (currentStep.value === 0) currentStep.value = 1
-    }
-})
-watch(() => form.group_ids.length, (len) => {
-    if (len > 0 && currentStep.value === 1) currentStep.value = 2
-})
-
 // Submit
 const submit = () => {
     form.post('/workloads', {
@@ -198,497 +184,469 @@ const submit = () => {
 </script>
 
 <template>
-    <AuthenticatedLayout>
-        <template #header>Yangi Yuklama Qo'shish</template>
-
-        <div class="max-w-5xl mx-auto space-y-6">
-
-            <!-- Orqaga -->
-            <div>
-                <Link href="/workloads"
-                      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    Orqaga qaytish
+    <AuthenticatedLayout title="Yuklama qo'shish">
+        <template #header>
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    Yuklama qo'shish
+                </h2>
+                <Link
+                    href="/workloads"
+                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300"
+                >
+                    ← Orqaga
                 </Link>
             </div>
+        </template>
 
-            <!-- Step indikator -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <div class="flex items-center">
-                    <template v-for="(step, i) in stepLabels" :key="i">
-                        <div class="flex items-center gap-3 flex-1 min-w-0">
-                            <div class="flex items-center gap-2 flex-shrink-0">
-                                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all"
-                                     :class="currentStep > i
-                                         ? 'bg-indigo-600 text-white'
-                                         : currentStep === i
-                                             ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
-                                             : 'bg-gray-100 text-gray-400'">
-                                    <svg v-if="currentStep > i" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span v-else>{{ i + 1 }}</span>
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <form @submit.prevent="submit">
+                    <!-- Asosiy ma'lumotlar -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">Asosiy ma'lumotlar</h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Department -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Kafedra <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="form.department_id"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">Kafedrani tanlang</option>
+                                        <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                                            {{ dept.name }}
+                                        </option>
+                                    </select>
+                                    <div v-if="form.errors.department_id" class="text-red-500 text-sm mt-1">
+                                        {{ form.errors.department_id }}
+                                    </div>
                                 </div>
-                                <span class="hidden sm:block text-sm font-medium"
-                                      :class="currentStep === i ? 'text-indigo-600' : currentStep > i ? 'text-gray-900' : 'text-gray-400'">
-                                    {{ step }}
-                                </span>
+
+                                <!-- Direction -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Yo'nalish <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="form.direction_id"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        :disabled="!form.department_id"
+                                        required
+                                    >
+                                        <option value="">Yo'nalishni tanlang</option>
+                                        <option v-for="dir in filteredDirections" :key="dir.id" :value="dir.id">
+                                            {{ dir.name }}
+                                        </option>
+                                    </select>
+                                    <div v-if="form.errors.direction_id" class="text-red-500 text-sm mt-1">
+                                        {{ form.errors.direction_id }}
+                                    </div>
+                                </div>
+
+                                <!-- Subject -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Fan <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="form.subject_id"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        :disabled="!form.department_id"
+                                        required
+                                    >
+                                        <option value="">Fanni tanlang</option>
+                                        <option v-for="subject in filteredSubjects" :key="subject.id" :value="subject.id">
+                                            {{ subject.name }} ({{ subject.code }})
+                                        </option>
+                                    </select>
+                                    <div v-if="form.errors.subject_id" class="text-red-500 text-sm mt-1">
+                                        {{ form.errors.subject_id }}
+                                    </div>
+                                </div>
+
+                                <!-- Teacher -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        O'qituvchi <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="form.teacher_id"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        :disabled="!form.department_id"
+                                        required
+                                    >
+                                        <option value="">O'qituvchini tanlang</option>
+                                        <option v-for="teacher in filteredTeachers" :key="teacher.id" :value="teacher.id">
+                                            {{ teacher.full_name }}
+                                        </option>
+                                    </select>
+                                    <div v-if="form.errors.teacher_id" class="text-red-500 text-sm mt-1">
+                                        {{ form.errors.teacher_id }}
+                                    </div>
+                                </div>
+
+                                <!-- Academic Year -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        O'quv yili <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="form.academic_year_id"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="">O'quv yilini tanlang</option>
+                                        <option v-for="year in academicYears" :key="year.id" :value="year.id">
+                                            {{ year.name }}
+                                        </option>
+                                    </select>
+                                    <div v-if="form.errors.academic_year_id" class="text-red-500 text-sm mt-1">
+                                        {{ form.errors.academic_year_id }}
+                                    </div>
+                                </div>
+
+                                <!-- Potok Checkbox -->
+                                <div class="flex items-center">
+                                    <input
+                                        id="is_potok"
+                                        v-model="form.is_potok"
+                                        type="checkbox"
+                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <label for="is_potok" class="ml-2 block text-sm text-gray-900">
+                                        Potok yaratish (bir nechta guruh birlashtiriladi)
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                        <div v-if="i < stepLabels.length - 1"
-                             class="h-px w-8 flex-shrink-0 mx-1 transition-colors"
-                             :class="currentStep > i ? 'bg-indigo-600' : 'bg-gray-200'"></div>
-                    </template>
-                </div>
+                    </div>
+
+                    <!-- Groups Selection -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">
+                                Guruhlar
+                                <span v-if="form.is_potok" class="text-sm text-blue-600">(Potok uchun kamida 2 ta guruh)</span>
+                            </h3>
+
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <label
+                                    v-for="group in filteredGroups"
+                                    :key="group.id"
+                                    class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                                    :class="form.group_ids.includes(group.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-300'"
+                                >
+                                    <input
+                                        v-model="form.group_ids"
+                                        type="checkbox"
+                                        :value="group.id"
+                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <span class="ml-2 text-sm">{{ group.name }}</span>
+                                </label>
+                            </div>
+
+                            <div v-if="form.errors.group_ids" class="text-red-500 text-sm mt-2">
+                                {{ form.errors.group_ids }}
+                            </div>
+
+                            <div v-if="form.group_ids.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-800">
+                                    Tanlangan: <strong>{{ form.group_ids.length }}</strong> ta guruh
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1-Semestr Soatlari -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">1-Semestr soatlari</h3>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ma'ruza</label>
+                                    <input
+                                        v-model.number="form.semester_1_lecture"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amaliy</label>
+                                    <input
+                                        v-model.number="form.semester_1_practical"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Laboratoriya</label>
+                                    <input
+                                        v-model.number="form.semester_1_laboratory"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Seminar</label>
+                                    <input
+                                        v-model.number="form.semester_1_seminar"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amaliyot</label>
+                                    <input
+                                        v-model.number="form.semester_1_practice"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Imtihon</label>
+                                    <input
+                                        v-model.number="form.semester_1_exam"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Test</label>
+                                    <input
+                                        v-model.number="form.semester_1_test"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    1-semestr jami: <strong>{{ semester1Total }}</strong> soat
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2-Semestr Soatlari -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">2-Semestr soatlari</h3>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ma'ruza</label>
+                                    <input
+                                        v-model.number="form.semester_2_lecture"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amaliy</label>
+                                    <input
+                                        v-model.number="form.semester_2_practical"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Laboratoriya</label>
+                                    <input
+                                        v-model.number="form.semester_2_laboratory"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Seminar</label>
+                                    <input
+                                        v-model.number="form.semester_2_seminar"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amaliyot</label>
+                                    <input
+                                        v-model.number="form.semester_2_practice"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        :disabled="form.is_potok"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Imtihon</label>
+                                    <input
+                                        v-model.number="form.semester_2_exam"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Test</label>
+                                    <input
+                                        v-model.number="form.semester_2_test"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    2-semestr jami: <strong>{{ semester2Total }}</strong> soat
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Umumiy Soatlar -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">Umumiy soatlar</h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kurs ishi</label>
+                                    <input
+                                        v-model.number="form.coursework_hours"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Diplom ishi</label>
+                                    <input
+                                        v-model.number="form.diploma_hours"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Konsultatsiya</label>
+                                    <input
+                                        v-model.number="form.consultation_hours"
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold mb-4">Qo'shimcha ma'lumot</h3>
+
+                            <textarea
+                                v-model="form.notes"
+                                rows="3"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="Izoh yoki qo'shimcha ma'lumotlar..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Total Summary -->
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-900">JAMI SOATLAR</h3>
+                                <p class="text-sm text-blue-700 mt-1">
+                                    1-semestr: {{ semester1Total }} | 2-semestr: {{ semester2Total }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold text-blue-900">{{ totalHours }}</p>
+                                <p class="text-sm text-blue-700">soat</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end gap-4">
+                        <Link
+                            href="/workloads"
+                            class="px-6 py-3 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                        >
+                            Bekor qilish
+                        </Link>
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+                        >
+                            <span v-if="form.processing">Saqlanmoqda...</span>
+                            <span v-else>Saqlash</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <form @submit.prevent="submit">
-                <!-- Asosiy ma'lumotlar -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">Asosiy ma'lumotlar</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Department -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Kafedra <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="form.department_id"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    required
-                                >
-                                    <option value="">Kafedrani tanlang</option>
-                                    <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                                        {{ dept.name }}
-                                    </option>
-                                </select>
-                                <div v-if="form.errors.department_id" class="text-red-500 text-sm mt-1">
-                                    {{ form.errors.department_id }}
-                                </div>
-                            </div>
-
-                            <!-- Direction -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Yo'nalish <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="form.direction_id"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    :disabled="!form.department_id"
-                                    required
-                                >
-                                    <option value="">Yo'nalishni tanlang</option>
-                                    <option v-for="dir in filteredDirections" :key="dir.id" :value="dir.id">
-                                        {{ dir.name }}
-                                    </option>
-                                </select>
-                                <div v-if="form.errors.direction_id" class="text-red-500 text-sm mt-1">
-                                    {{ form.errors.direction_id }}
-                                </div>
-                            </div>
-
-                            <!-- Subject -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Fan <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="form.subject_id"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    :disabled="!form.department_id"
-                                    required
-                                >
-                                    <option value="">Fanni tanlang</option>
-                                    <option v-for="subject in filteredSubjects" :key="subject.id" :value="subject.id">
-                                        {{ subject.name }} ({{ subject.code }})
-                                    </option>
-                                </select>
-                                <div v-if="form.errors.subject_id" class="text-red-500 text-sm mt-1">
-                                    {{ form.errors.subject_id }}
-                                </div>
-                            </div>
-
-                            <!-- Teacher -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    O'qituvchi <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="form.teacher_id"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    :disabled="!form.department_id"
-                                    required
-                                >
-                                    <option value="">O'qituvchini tanlang</option>
-                                    <option v-for="teacher in filteredTeachers" :key="teacher.id" :value="teacher.id">
-                                        {{ teacher.full_name }}
-                                    </option>
-                                </select>
-                                <div v-if="form.errors.teacher_id" class="text-red-500 text-sm mt-1">
-                                    {{ form.errors.teacher_id }}
-                                </div>
-                            </div>
-
-                            <!-- Academic Year -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    O'quv yili <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="form.academic_year_id"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    required
-                                >
-                                    <option value="">O'quv yilini tanlang</option>
-                                    <option v-for="year in academicYears" :key="year.id" :value="year.id">
-                                        {{ year.name }}
-                                    </option>
-                                </select>
-                                <div v-if="form.errors.academic_year_id" class="text-red-500 text-sm mt-1">
-                                    {{ form.errors.academic_year_id }}
-                                </div>
-                            </div>
-
-                            <!-- Potok Checkbox -->
-                            <div class="flex items-center">
-                                <input
-                                    id="is_potok"
-                                    v-model="form.is_potok"
-                                    type="checkbox"
-                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label for="is_potok" class="ml-2 block text-sm text-gray-900">
-                                    Potok yaratish (bir nechta guruh birlashtiriladi)
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Groups Selection -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">
-                            Guruhlar
-                            <span v-if="form.is_potok" class="text-sm text-blue-600">(Potok uchun kamida 2 ta guruh)</span>
-                        </h3>
-
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <label
-                                v-for="group in filteredGroups"
-                                :key="group.id"
-                                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                :class="form.group_ids.includes(group.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-300'"
-                            >
-                                <input
-                                    v-model="form.group_ids"
-                                    type="checkbox"
-                                    :value="group.id"
-                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <span class="ml-2 text-sm">{{ group.name }}</span>
-                            </label>
-                        </div>
-
-                        <div v-if="form.errors.group_ids" class="text-red-500 text-sm mt-2">
-                            {{ form.errors.group_ids }}
-                        </div>
-
-                        <div v-if="form.group_ids.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
-                            <p class="text-sm text-blue-800">
-                                Tanlangan: <strong>{{ form.group_ids.length }}</strong> ta guruh
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 1-Semestr Soatlari -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">1-Semestr soatlari</h3>
-
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Ma'ruza</label>
-                                <input
-                                    v-model.number="form.semester_1_lecture"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Amaliy</label>
-                                <input
-                                    v-model.number="form.semester_1_practical"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratoriya</label>
-                                <input
-                                    v-model.number="form.semester_1_laboratory"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Seminar</label>
-                                <input
-                                    v-model.number="form.semester_1_seminar"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Amaliyot</label>
-                                <input
-                                    v-model.number="form.semester_1_practice"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Imtihon</label>
-                                <input
-                                    v-model.number="form.semester_1_exam"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Test</label>
-                                <input
-                                    v-model.number="form.semester_1_test"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <p class="text-sm text-gray-700">
-                                1-semestr jami: <strong>{{ semester1Total }}</strong> soat
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2-Semestr Soatlari -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">2-Semestr soatlari</h3>
-
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Ma'ruza</label>
-                                <input
-                                    v-model.number="form.semester_2_lecture"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Amaliy</label>
-                                <input
-                                    v-model.number="form.semester_2_practical"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratoriya</label>
-                                <input
-                                    v-model.number="form.semester_2_laboratory"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Seminar</label>
-                                <input
-                                    v-model.number="form.semester_2_seminar"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Amaliyot</label>
-                                <input
-                                    v-model.number="form.semester_2_practice"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    :disabled="form.is_potok"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Imtihon</label>
-                                <input
-                                    v-model.number="form.semester_2_exam"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Test</label>
-                                <input
-                                    v-model.number="form.semester_2_test"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <p class="text-sm text-gray-700">
-                                2-semestr jami: <strong>{{ semester2Total }}</strong> soat
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Umumiy Soatlar -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">Umumiy soatlar</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Kurs ishi</label>
-                                <input
-                                    v-model.number="form.coursework_hours"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Diplom ishi</label>
-                                <input
-                                    v-model.number="form.diploma_hours"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Konsultatsiya</label>
-                                <input
-                                    v-model.number="form.consultation_hours"
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Notes -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold mb-4">Qo'shimcha ma'lumot</h3>
-
-                        <textarea
-                            v-model="form.notes"
-                            rows="3"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Izoh yoki qo'shimcha ma'lumotlar..."
-                        ></textarea>
-                    </div>
-                </div>
-
-                <!-- Total Summary -->
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg font-semibold text-blue-900">JAMI SOATLAR</h3>
-                            <p class="text-sm text-blue-700 mt-1">
-                                1-semestr: {{ semester1Total }} | 2-semestr: {{ semester2Total }}
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-3xl font-bold text-blue-900">{{ totalHours }}</p>
-                            <p class="text-sm text-blue-700">soat</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit Buttons -->
-                <div class="flex justify-end gap-4">
-                    <Link
-                        href="/workloads"
-                        class="px-6 py-3 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
-                    >
-                        Bekor qilish
-                    </Link>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                    >
-                        <span v-if="form.processing">Saqlanmoqda...</span>
-                        <span v-else>Saqlash</span>
-                    </button>
-                </div>
-            </form>
         </div>
     </AuthenticatedLayout>
 </template>

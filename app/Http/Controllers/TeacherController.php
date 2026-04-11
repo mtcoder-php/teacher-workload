@@ -36,7 +36,7 @@ class TeacherController extends Controller
             });
         }
 
-        $teachers = $query->latest()->paginate(20)->withQueryString();
+        $teachers = $query->latest()->paginate(10)->withQueryString();
         $departments = Department::where('is_active', true)->get(['id', 'name']);
 
         return Inertia::render('Teachers/Index', [
@@ -146,7 +146,7 @@ class TeacherController extends Controller
     public function edit(Teacher $teacher)
     {
         $teacher->load('user');
-        
+
         $departments = Department::where('is_active', true)
             ->with('faculty:id,name')
             ->get(['id', 'name', 'faculty_id']);
@@ -177,7 +177,7 @@ class TeacherController extends Controller
             // Agar yangi parol kiritilgan bo'lsa
             if (!empty($validated['password'])) {
                 $userData['password'] = Hash::make($validated['password']);
-                
+
                 // ✅ YANGI: Parol o'zgartirilganligi haqida bildirishnoma
                 NotificationService::info(
                     $teacher->user,
@@ -266,7 +266,7 @@ class TeacherController extends Controller
             );
 
             // Cascade deletion will handle teacher record
-            $teacher->user->delete(); 
+            $teacher->user->delete();
 
             // ✅ YANGI: Kafedra mudiriga xabar
             $departmentHead = Department::find($teacher->department_id)->head ?? null;

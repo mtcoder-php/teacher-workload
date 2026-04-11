@@ -1,114 +1,142 @@
 <template>
-    <AuthenticatedLayout title="Yangi yuklama yaratish">
-        <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-800">Yangi yuklama yaratish</h2>
-                <Link href="/workloads" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
-                    ← Orqaga
+    <AuthenticatedLayout>
+        <template #header>Yangi yuklama yaratish</template>
+
+        <div class="max-w-4xl mx-auto space-y-5">
+
+            <!-- Orqaga -->
+            <div>
+                <Link href="/workloads"
+                      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Orqaga qaytish
                 </Link>
             </div>
-        </template>
 
-        <div class="py-6">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-
-                <!-- Progress -->
+            <!-- Progress -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 px-8 py-6">
                 <WizardProgress :current-step="currentStep" :steps="stepTitles" />
+            </div>
 
-                <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <!-- Kontent -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100">
 
-                    <!-- Server xatosi -->
-                    <div v-if="$page.props.errors?.error"
-                         class="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                        ⚠️ {{ $page.props.errors.error }}
-                    </div>
+                <!-- Server xatosi -->
+                <div v-if="$page.props.errors?.error"
+                     class="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    {{ $page.props.errors.error }}
+                </div>
 
-                    <div class="p-6 sm:p-8">
+                <div class="p-6 sm:p-8">
 
-                        <!-- Step 1: Kafedra + Yo'nalish + Guruhlar -->
-                        <Step1
-                            v-if="currentStep === 1"
-                            v-model="form"
-                            :departments="departments"
-                            :directions="directions"
-                            :groups="groups"
-                            :current-user="currentUser"
-                            @valid="stepValid[1] = $event"
-                        />
+                    <!-- Step 1: Kafedra + Yo'nalish + Guruhlar -->
+                    <Step1
+                        v-if="currentStep === 1"
+                        v-model="form"
+                        :departments="departments"
+                        :directions="directions"
+                        :groups="groups"
+                        :current-user="currentUser"
+                        @valid="stepValid[1] = $event"
+                    />
 
-                        <!-- Step 2: Fan + Soatlar -->
-                        <Step3
-                            v-else-if="currentStep === 2"
-                            v-model="form"
-                            :subjects="subjects"
-                            :groups="groups"
-                            :current-academic-year="currentAcademicYear"
-                            @valid="stepValid[2] = $event"
-                            @subject-loaded="onSubjectLoaded"
-                        />
+                    <!-- Step 2: Fan + Soatlar -->
+                    <Step3
+                        v-else-if="currentStep === 2"
+                        v-model="form"
+                        :subjects="subjects"
+                        :groups="groups"
+                        :current-academic-year="currentAcademicYear"
+                        @valid="stepValid[2] = $event"
+                        @subject-loaded="onSubjectLoaded"
+                    />
 
-                        <!-- Step 3: O'qituvchi -->
-                        <Step4
-                            v-else-if="currentStep === 3"
-                            v-model="form"
-                            :teachers="teachers"
-                            @valid="stepValid[3] = $event"
-                        />
+                    <!-- Step 3: O'qituvchi -->
+                    <Step4
+                        v-else-if="currentStep === 3"
+                        v-model="form"
+                        :teachers="teachers"
+                        @valid="stepValid[3] = $event"
+                    />
 
-                        <!-- Step 4: Tasdiqlash -->
-                        <Step5
-                            v-else-if="currentStep === 4"
-                            :form="form"
-                            :departments="departments"
-                            :directions="directions"
-                            :subjects="subjects"
-                            :groups="groups"
-                            :teachers="teachers"
-                            @valid="stepValid[4] = $event"
-                        />
-
-                    </div>
-
-                    <!-- Navigatsiya -->
-                    <div class="px-6 sm:px-8 py-5 bg-gray-50 rounded-b-2xl border-t border-gray-100 flex items-center justify-between">
-                        <div class="flex gap-3">
-                            <button
-                                v-if="currentStep > 1"
-                                @click="prevStep"
-                                class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                ← Orqaga
-                            </button>
-                            <button
-                                @click="saveDraft"
-                                :disabled="isSaving"
-                                class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50"
-                            >
-                                {{ isSaving ? 'Saqlanmoqda...' : '💾 Qoralama' }}
-                            </button>
-                        </div>
-
-                        <div>
-                            <button
-                                v-if="currentStep < totalSteps"
-                                @click="nextStep"
-                                :disabled="!stepValid[currentStep]"
-                                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                Keyingisi →
-                            </button>
-                            <button
-                                v-else
-                                @click="submitForm"
-                                :disabled="isSaving"
-                                class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                            >
-                                {{ isSaving ? 'Saqlanmoqda...' : '✓ Yuklama yaratish' }}
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Step 4: Tasdiqlash -->
+                    <Step5
+                        v-else-if="currentStep === 4"
+                        :form="form"
+                        :departments="departments"
+                        :directions="directions"
+                        :subjects="subjects"
+                        :groups="groups"
+                        :teachers="teachers"
+                        @valid="stepValid[4] = $event"
+                    />
 
                 </div>
+
+                <!-- Navigatsiya -->
+                <div class="px-6 sm:px-8 py-5 bg-gray-50 rounded-b-lg border-t border-gray-100 flex items-center justify-between">
+                    <div class="flex gap-3">
+                        <button
+                            v-if="currentStep > 1"
+                            @click="prevStep"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600
+                                       bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                            Orqaga
+                        </button>
+                        <button
+                            @click="saveDraft"
+                            :disabled="isSaving"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-700
+                                       bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100
+                                       transition-colors disabled:opacity-50"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                            </svg>
+                            {{ isSaving ? 'Saqlanmoqda...' : 'Qoralama' }}
+                        </button>
+                    </div>
+
+                    <div>
+                        <button
+                            v-if="currentStep < totalSteps"
+                            @click="nextStep"
+                            :disabled="!stepValid[currentStep]"
+                            class="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white
+                                       bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors
+                                       disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            Keyingisi
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                        <button
+                            v-else
+                            @click="submitForm"
+                            :disabled="isSaving"
+                            class="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white
+                                       bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            {{ isSaving ? 'Saqlanmoqda...' : 'Yuklama yaratish' }}
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </AuthenticatedLayout>
@@ -141,10 +169,10 @@ const currentStep = ref(1)
 const isSaving    = ref(false)
 
 const stepTitles = [
-    { label: 'Kafedra & Guruhlar', icon: '🏛️' },
-    { label: 'Fan & Soatlar',      icon: '📚' },
-    { label: 'O\'qituvchi',        icon: '👨‍🏫' },
-    { label: 'Tasdiqlash',         icon: '✅' },
+    { label: 'Kafedra & Guruhlar' },
+    { label: 'Fan & Soatlar' },
+    { label: 'O\'qituvchi' },
+    { label: 'Tasdiqlash' },
 ]
 
 const stepValid = reactive({ 1: false, 2: false, 3: false, 4: true })

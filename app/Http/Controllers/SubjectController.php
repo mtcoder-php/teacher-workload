@@ -69,7 +69,7 @@ class SubjectController extends Controller
         $sortDirection = $request->get('direction', 'desc');
         $query->orderBy($sortField, $sortDirection);
 
-        $subjects = $query->paginate(20)->withQueryString();
+        $subjects = $query->paginate(10)->withQueryString();
 
         // Filtr uchun ma'lumotlar
         $departments = Department::where('is_active', true)
@@ -84,8 +84,8 @@ class SubjectController extends Controller
             'departments' => $departments,
             'directions' => $directions,
             'filters' => $request->only([
-                'search', 
-                'department_id', 
+                'search',
+                'department_id',
                 'direction_id',
                 'course_level',
                 'subject_type',
@@ -168,7 +168,7 @@ class SubjectController extends Controller
     public function show(Subject $subject)
     {
         $subject->load([
-            'department.faculty', 
+            'department.faculty',
             'direction',
         ]);
 
@@ -204,7 +204,7 @@ class SubjectController extends Controller
             'total_hours' => $subject->total_hours,
             'total_auditory_hours' => $subject->total_auditory_hours,
         ];
-        
+
         return Inertia::render('Subjects/Show', [
             'subject' => $subject,
             'stats' => $stats,

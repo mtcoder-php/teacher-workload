@@ -146,15 +146,7 @@
                     </table>
                 </div>
                 <div v-if="groups.data?.length" class="px-6 py-4 border-t border-gray-200">
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p class="text-sm text-gray-600">{{ groups.from }}-{{ groups.to }} / {{ groups.total }} ta</p>
-                        <div class="flex gap-1 flex-wrap">
-                            <template v-for="(link, i) in groups.links" :key="i">
-                                <Link v-if="link.url" :href="link.url" :class="['px-3 py-2 rounded-lg text-sm font-medium transition-colors', link.active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']" v-html="link.label"/>
-                                <span v-else class="px-3 py-2 rounded-lg text-sm bg-gray-50 text-gray-400 cursor-not-allowed" v-html="link.label"/>
-                            </template>
-                        </div>
-                    </div>
+                    <Pagination v-if="groups.total > 0" :meta="groups" />
                 </div>
             </div>
         </div>
@@ -168,6 +160,7 @@
 import { ref, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import Pagination from '@/Components/Pagination.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
 
 const props = defineProps({ groups: Object, directions: Array, filters: Object })

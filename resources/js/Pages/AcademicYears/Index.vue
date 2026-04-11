@@ -86,25 +86,12 @@
 
                 <!-- Bo'sh holat -->
                 <div v-if="!academicYears.data?.length" class="col-span-full">
-                    <div class="bg-white rounded-lg shadow-sm p-12 text-center">
-                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p class="text-sm text-gray-500">O'quv yili topilmadi</p>
-                    </div>
+                    <p class="text-center text-sm text-gray-400 py-8">O'quv yili topilmadi</p>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <div v-if="academicYears.data?.length" class="mt-6 flex justify-center gap-1">
-                <template v-for="(link, i) in academicYears.links" :key="i">
-                    <Link v-if="link.url" :href="link.url"
-                          :class="['px-3 py-2 rounded-lg text-sm font-medium transition-colors', link.active ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200']"
-                          v-html="link.label"/>
-                    <span v-else class="px-3 py-2 rounded-lg text-sm bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-100" v-html="link.label"/>
-                </template>
-            </div>
+            <Pagination v-if="academicYears.total > 0" :meta="academicYears" />
         </div>
 
         <DeleteModal :show="!!deleteTarget" title="O'quv yilini o'chirish"
@@ -117,6 +104,7 @@
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import Pagination from '@/Components/Pagination.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
 
 const props = defineProps({ academicYears: Object })

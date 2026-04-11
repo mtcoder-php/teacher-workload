@@ -1,276 +1,290 @@
 <template>
-    <AuthenticatedLayout>
-        <template #header>Yuklamani tahrirlash</template>
-
-        <div class="max-w-4xl mx-auto space-y-6">
-
-            <!-- Orqaga -->
-            <div>
+    <AuthenticatedLayout title="Yuklamani tahrirlash">
+        <template #header>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-800">Yuklamani tahrirlash</h2>
                 <Link :href="route('workloads.show', workload.id)"
-                      class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    Orqaga qaytish
+                      class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                    ← Orqaga
                 </Link>
             </div>
+        </template>
 
-            <!-- Server xatosi -->
-            <div v-if="$page.props.errors?.error"
-                 class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {{ $page.props.errors.error }}
-            </div>
+        <div class="py-6">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            <!-- Yuklama info -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h3 class="text-base font-semibold text-gray-900 mb-4">Yuklama ma'lumotlari</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                    <div>
-                        <span class="text-gray-500">Fan:</span>
-                        <p class="font-medium text-gray-800">{{ workload.subject?.name }}</p>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Guruhlar:</span>
-                        <p class="font-medium text-gray-800">
-                            {{ workload.groups?.map(g => g.name).join(', ') || '—' }}
-                        </p>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Tur:</span>
-                        <p class="font-medium">
+                <!-- Server xatosi -->
+                <div v-if="$page.props.errors?.error"
+                     class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                    ⚠️ {{ $page.props.errors.error }}
+                </div>
+
+                <!-- Yuklama info -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 Yuklama ma'lumotlari</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-500">Fan:</span>
+                            <p class="font-medium text-gray-800">{{ workload.subject?.name }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Guruhlar:</span>
+                            <p class="font-medium text-gray-800">
+                                {{ workload.groups?.map(g => g.name).join(', ') || '—' }}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Tur:</span>
+                            <p class="font-medium">
                                 <span v-if="workload.is_potok"
                                       class="text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full text-xs">
                                     Potokli
                                 </span>
-                            <span v-else class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">
+                                <span v-else class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">
                                     Potoksiz
                                 </span>
-                        </p>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Potok ogohlantirish -->
+                    <div v-if="workload.is_potok"
+                         class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                        ℹ️ Potokli yuklama — faqat <strong>ma'ruza soatlari</strong> ko'rsatiladi.
+                        Ma'ruza soatlarini <strong>kamaytirish mumkin emas</strong>, oshirish esa limit doirasida mumkin.
                     </div>
                 </div>
 
-                <!-- Potok ogohlantirish -->
-                <div v-if="workload.is_potok"
-                     class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 flex items-start gap-2">
-                    <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span>Potokli yuklama — faqat <strong>ma'ruza soatlari</strong> ko'rsatiladi.
-                        Ma'ruza soatlarini <strong>kamaytirish mumkin emas</strong>, oshirish esa limit doirasida mumkin.</span>
-                </div>
-            </div>
+                <!-- O'qituvchi -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">👨‍🏫 O'qituvchi</h3>
 
-            <!-- O'qituvchi -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h3 class="text-base font-semibold text-gray-900 mb-4">O'qituvchi</h3>
-
-                <div class="relative mb-2">
-                    <input v-model="teacherSearch" type="text"
-                           placeholder="O'qituvchi qidirish..."
-                           class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2 pl-9
+                    <div class="relative mb-2">
+                        <input v-model="teacherSearch" type="text"
+                               placeholder="O'qituvchi qidirish..."
+                               class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2 pl-9
                                       focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none" />
-                    <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z"/>
-                    </svg>
-                </div>
-
-                <div class="border border-gray-200 rounded-lg max-h-56 overflow-y-auto divide-y divide-gray-100 mb-3">
-                    <div v-if="filteredTeachers.length === 0"
-                         class="p-3 text-sm text-gray-400 text-center">
-                        O'qituvchi topilmadi
-                    </div>
-                    <button v-for="t in filteredTeachers" :key="t.id"
-                            type="button"
-                            @click="form.teacher_id = t.id"
-                            :class="[
-                                    'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-50 transition-colors',
-                                    form.teacher_id === t.id ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''
-                                ]">
-                        <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                            {{ t.name?.charAt(0) }}
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-800">{{ t.name }}</p>
-                            <p class="text-xs text-gray-500">{{ t.position }}</p>
-                        </div>
-                        <svg v-if="form.teacher_id === t.id"
-                             class="w-5 h-5 text-indigo-500 ml-auto"
+                        <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z"/>
                         </svg>
-                    </button>
-                </div>
-                <p v-if="form.errors.teacher_id" class="text-xs text-red-500">
-                    {{ form.errors.teacher_id }}
-                </p>
-            </div>
-
-            <!-- Soatlar -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-base font-semibold text-gray-900">Soatlar taqsimoti</h3>
-                    <div v-if="isLoadingHours" class="text-sm text-gray-400 flex items-center gap-1">
-                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                        Yuklanmoqda...
                     </div>
+
+                    <div class="border border-gray-200 rounded-xl max-h-52 overflow-y-auto divide-y divide-gray-100 mb-3">
+                        <div v-if="filteredTeachers.length === 0"
+                             class="p-3 text-sm text-gray-400 text-center">
+                            O'qituvchi topilmadi
+                        </div>
+                        <button v-for="t in filteredTeachers" :key="t.id"
+                                type="button"
+                                @click="form.teacher_id = t.id"
+                                :class="[
+                                    'w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-blue-50 transition-colors',
+                                    form.teacher_id === t.id ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                                ]">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center
+                                        justify-center text-xs font-bold flex-shrink-0">
+                                {{ t.name?.charAt(0) }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ t.name }}</p>
+                                <p class="text-xs text-gray-500">{{ t.position }}</p>
+                            </div>
+                            <svg v-if="form.teacher_id === t.id"
+                                 class="w-4 h-4 text-blue-500 ml-auto"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p v-if="form.errors.teacher_id" class="text-xs text-red-500">
+                        {{ form.errors.teacher_id }}
+                    </p>
                 </div>
 
-                <!-- Progress -->
-                <div class="mb-5 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-sm font-medium text-gray-700">Taqsimlash holati</span>
-                        <span class="text-xs text-gray-500">
+                <!-- Soatlar -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-gray-700">⏱️ Soatlar</h3>
+                        <div v-if="isLoadingHours" class="text-xs text-gray-400 flex items-center gap-1">
+                            <svg class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                        stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor"
+                                      d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                            Yuklanmoqda...
+                        </div>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="mb-5 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs text-gray-600">Taqsimlash holati</span>
+                            <span class="text-xs text-gray-500">
                                 {{ enteredTotal }} / {{ maxTotal }} soat
                             </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-2 rounded-full transition-all"
+                                 :class="progressBarClass"
+                                 :style="{ width: Math.min(distributionPercent, 100) + '%' }" />
+                        </div>
+                        <p v-if="hasOverLimit" class="text-xs text-red-500 mt-1">
+                            ⚠️ Limitdan oshib ketdi!
+                        </p>
+                        <p v-else-if="hasBelowOriginal" class="text-xs text-red-500 mt-1">
+                            ⚠️ Potok ma'ruza soatlarini kamaytirish mumkin emas!
+                        </p>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="h-2.5 rounded-full transition-all duration-500"
-                             :class="progressBarClass"
-                             :style="{ width: Math.min(distributionPercent, 100) + '%' }" />
-                    </div>
-                    <p v-if="hasOverLimit" class="text-xs text-red-500 mt-1">
-                        Limitdan oshib ketdi!
-                    </p>
-                    <p v-else-if="hasBelowOriginal" class="text-xs text-red-500 mt-1">
-                        Potok ma'ruza soatlarini kamaytirish mumkin emas!
-                    </p>
-                </div>
 
-                <!-- 1-semestr -->
-                <div v-if="hasSemester1Hours" class="mb-5">
-                    <h4 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <span class="w-7 h-7 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-sm font-bold">1</span>
-                        1-semestr soatlari
-                    </h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-                        <div v-for="f in semester1Fields" :key="f.key">
-                            <label class="block text-sm font-medium text-gray-600 mb-1.5">
-                                {{ f.label }}
-                                <span v-if="maxHours[f.key] > 0"
-                                      class="text-gray-400">(max: {{ remainingHours[f.key] ?? maxHours[f.key] }})</span>
-                            </label>
-                            <input
-                                v-model.number="form[f.key]"
-                                type="number" min="0" step="0.5"
-                                :disabled="isFieldDisabled(f.key)"
-                                :class="[
-                                        'w-full text-sm px-3 py-2.5 rounded-lg border transition',
+                    <!-- 1-semestr -->
+                    <div v-if="hasSemester1Hours" class="mb-5">
+                        <h4 class="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2">
+                            <span class="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center
+                                         justify-center text-xs font-bold">1</span>
+                            1-semestr soatlari
+                        </h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div v-for="f in semester1Fields" :key="f.key">
+                                <!-- Label - har doim bir qator, truncate -->
+                                <label class="block text-xs font-medium text-gray-600 mb-1 truncate" :title="f.label">
+                                    {{ f.label }}
+                                </label>
+                                <!-- Input -->
+                                <input
+                                    v-model.number="form[f.key]"
+                                    type="number" min="0" step="0.5"
+                                    :disabled="isFieldDisabled(f.key)"
+                                    :class="[
+                                        'w-full text-sm px-3 py-2 rounded-lg border transition outline-none',
                                         isFieldDisabled(f.key)
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                                            : isOverLimit(f.key)
+                                            : isOverLimit(f.key) || isBelowOriginal(f.key)
                                                 ? 'border-red-400 bg-red-50 text-red-700 focus:ring-2 focus:ring-red-200'
-                                                : isBelowOriginal(f.key)
-                                                    ? 'border-red-400 bg-red-50 text-red-700 focus:ring-2 focus:ring-red-200'
-                                                    : 'border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400'
+                                                : 'border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400'
                                     ]"
-                            />
-                            <p v-if="isOverLimit(f.key)"
-                               class="text-xs text-red-500 mt-0.5">
-                                Limit: {{ remainingHours[f.key] }} soat
-                            </p>
-                            <p v-else-if="isBelowOriginal(f.key)"
-                               class="text-xs text-red-500 mt-0.5">
-                                Kamaytirish mumkin emas
-                            </p>
+                                />
+                                <!-- Max badge - input ostida, bir qator -->
+                                <div class="mt-1 h-4">
+                                    <p v-if="isOverLimit(f.key)" class="text-xs text-red-500 leading-none">
+                                        Limit: {{ remainingHours[f.key] }}
+                                    </p>
+                                    <p v-else-if="isBelowOriginal(f.key)" class="text-xs text-red-500 leading-none">
+                                        Kamaytirib bo'lmaydi
+                                    </p>
+                                    <p v-else-if="maxHours[f.key] > 0" class="text-xs text-gray-400 leading-none">
+                                        max: {{ remainingHours[f.key] ?? maxHours[f.key] }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 2-semestr -->
-                <div v-if="hasSemester2Hours" class="mb-5">
-                    <h4 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <span class="w-7 h-7 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center text-sm font-bold">2</span>
-                        2-semestr soatlari
-                    </h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-                        <div v-for="f in semester2Fields" :key="f.key">
-                            <label class="block text-sm font-medium text-gray-600 mb-1.5">
-                                {{ f.label }}
-                                <span v-if="maxHours[f.key] > 0"
-                                      class="text-gray-400">(max: {{ remainingHours[f.key] ?? maxHours[f.key] }})</span>
-                            </label>
-                            <input
-                                v-model.number="form[f.key]"
-                                type="number" min="0" step="0.5"
-                                :disabled="isFieldDisabled(f.key)"
-                                :class="[
-                                        'w-full text-sm px-3 py-2.5 rounded-lg border transition',
+                    <!-- 2-semestr -->
+                    <div v-if="hasSemester2Hours" class="mb-5">
+                        <h4 class="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2">
+                            <span class="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center
+                                         justify-center text-xs font-bold">2</span>
+                            2-semestr soatlari
+                        </h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div v-for="f in semester2Fields" :key="f.key">
+                                <label class="block text-xs font-medium text-gray-600 mb-1 truncate" :title="f.label">
+                                    {{ f.label }}
+                                </label>
+                                <input
+                                    v-model.number="form[f.key]"
+                                    type="number" min="0" step="0.5"
+                                    :disabled="isFieldDisabled(f.key)"
+                                    :class="[
+                                        'w-full text-sm px-3 py-2 rounded-lg border transition outline-none',
                                         isFieldDisabled(f.key)
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                                            : isOverLimit(f.key)
+                                            : isOverLimit(f.key) || isBelowOriginal(f.key)
                                                 ? 'border-red-400 bg-red-50 text-red-700 focus:ring-2 focus:ring-red-200'
-                                                : isBelowOriginal(f.key)
-                                                    ? 'border-red-400 bg-red-50 text-red-700 focus:ring-2 focus:ring-red-200'
-                                                    : 'border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400'
+                                                : 'border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400'
                                     ]"
-                            />
-                            <p v-if="isOverLimit(f.key)"
-                               class="text-xs text-red-500 mt-0.5">
-                                Limit: {{ remainingHours[f.key] }} soat
-                            </p>
-                            <p v-else-if="isBelowOriginal(f.key)"
-                               class="text-xs text-red-500 mt-0.5">
-                                Kamaytirish mumkin emas
-                            </p>
+                                />
+                                <div class="mt-1 h-4">
+                                    <p v-if="isOverLimit(f.key)" class="text-xs text-red-500 leading-none">
+                                        Limit: {{ remainingHours[f.key] }}
+                                    </p>
+                                    <p v-else-if="isBelowOriginal(f.key)" class="text-xs text-red-500 leading-none">
+                                        Kamaytirib bo'lmaydi
+                                    </p>
+                                    <p v-else-if="maxHours[f.key] > 0" class="text-xs text-gray-400 leading-none">
+                                        max: {{ remainingHours[f.key] ?? maxHours[f.key] }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Qo'shimcha soatlar -->
-                <div v-if="hasExtraHours && !workload.is_potok">
-                    <h4 class="text-sm font-semibold text-gray-800 mb-4">Qo'shimcha soatlar</h4>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div v-for="f in extraFields" :key="f.key">
-                            <label class="block text-sm font-medium text-gray-600 mb-1.5">
-                                {{ f.label }}
-                                <span v-if="maxHours[f.key] > 0"
-                                      class="text-gray-400">(max: {{ remainingHours[f.key] ?? maxHours[f.key] }})</span>
-                            </label>
-                            <input
-                                v-model.number="form[f.key]"
-                                type="number" min="0" step="0.5"
-                                :disabled="maxHours[f.key] === 0"
-                                :class="[
-                                        'w-full text-sm px-3 py-2.5 rounded-lg border transition',
+                    <!-- Qo'shimcha soatlar -->
+                    <div v-if="hasExtraHours && !workload.is_potok">
+                        <h4 class="text-xs font-semibold text-gray-600 mb-3">Qo'shimcha soatlar</h4>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div v-for="f in extraFields" :key="f.key">
+                                <label class="block text-xs font-medium text-gray-600 mb-1 truncate" :title="f.label">
+                                    {{ f.label }}
+                                </label>
+                                <input
+                                    v-model.number="form[f.key]"
+                                    type="number" min="0" step="0.5"
+                                    :disabled="maxHours[f.key] === 0"
+                                    :class="[
+                                        'w-full text-sm px-3 py-2 rounded-lg border transition outline-none',
                                         maxHours[f.key] === 0
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
                                             : isOverLimit(f.key)
                                                 ? 'border-red-400 bg-red-50 text-red-700 focus:ring-2 focus:ring-red-200'
                                                 : 'border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400'
                                     ]"
-                            />
-                            <p v-if="isOverLimit(f.key)"
-                               class="text-xs text-red-500 mt-0.5">
-                                Limit: {{ remainingHours[f.key] }} soat
-                            </p>
+                                />
+                                <div class="mt-1 h-4">
+                                    <p v-if="isOverLimit(f.key)" class="text-xs text-red-500 leading-none">
+                                        Limit: {{ remainingHours[f.key] }}
+                                    </p>
+                                    <p v-else-if="maxHours[f.key] > 0" class="text-xs text-gray-400 leading-none">
+                                        max: {{ remainingHours[f.key] ?? maxHours[f.key] }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Izoh -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h3 class="text-base font-semibold text-gray-900 mb-4">Izoh</h3>
-                <textarea v-model="form.notes" rows="3"
-                          placeholder="Qo'shimcha izoh..."
-                          class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" />
-            </div>
+                <!-- Izoh -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 Izoh</h3>
+                    <textarea v-model="form.notes" rows="3"
+                              placeholder="Qo'shimcha izoh..."
+                              class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2
+                                     focus:ring-2 focus:ring-blue-300 focus:border-blue-400
+                                     outline-none resize-none" />
+                </div>
 
-            <!-- Tugmalar -->
-            <div class="flex items-center justify-between">
-                <Link :href="route('workloads.show', workload.id)"
-                      class="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">
-                    Bekor qilish
-                </Link>
-                <button
-                    @click="submit"
-                    :disabled="form.processing || hasOverLimit || hasBelowOriginal"
-                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed">
-                    {{ form.processing ? 'Saqlanmoqda...' : 'Saqlash' }}
-                </button>
-            </div>
+                <!-- Tugmalar -->
+                <div class="flex items-center justify-between">
+                    <Link :href="route('workloads.show', workload.id)"
+                          class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300
+                                 rounded-lg hover:bg-gray-50 transition-colors">
+                        Bekor qilish
+                    </Link>
+                    <button
+                        @click="submit"
+                        :disabled="form.processing || hasOverLimit || hasBelowOriginal"
+                        class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg
+                               hover:bg-blue-700 transition-colors
+                               disabled:opacity-40 disabled:cursor-not-allowed">
+                        {{ form.processing ? 'Saqlanmoqda...' : '✓ Saqlash' }}
+                    </button>
+                </div>
 
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
