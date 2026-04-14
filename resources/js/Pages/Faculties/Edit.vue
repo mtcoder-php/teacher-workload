@@ -118,7 +118,7 @@ const form = useForm({
 
 const submit = () => form.put(`/faculties/${props.faculty.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Fakultet muvaffaqiyatli yangilandi!'),
+    onSuccess: () => toast.success("Fakultet muvaffaqiyatli yangilandi!"),
     onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

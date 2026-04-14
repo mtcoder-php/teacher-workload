@@ -134,9 +134,9 @@ const form = useForm({
     duration_years: 4, description: '', is_active: true,
 })
 
-const submit = () => form.post('/directions', {
-        preserveScroll: true,
-        onSuccess: () => toast.success('Yo\'nalish muvaffaqiyatli qo\'shildi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+const submit = () => form.post(`/directions`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success("Yo'nalish muvaffaqiyatli qo'shildi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

@@ -120,9 +120,9 @@ const form = useForm({
     faculty_id: null, name: '', code: '', head_id: null, description: '', is_active: true,
 })
 
-const submit = () => form.post('/departments', {
+const submit = () => form.post(`/departments`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Kafedra muvaffaqiyatli qo\'shildi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onSuccess: () => toast.success("Kafedra muvaffaqiyatli qo'shildi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

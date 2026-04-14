@@ -170,7 +170,7 @@ function doDelete() {
     deleting.value = true
     router.delete(`/subjects/${deleteTarget.value.id}`, {
         onSuccess: () => toast.success("Fan muvaffaqiyatli o'chirildi!"),
-        onError:   () => toast.error("O\'chirishda xatolik!"),
+        onError:   () => toast.error("O'chirishda xatolik!"),
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

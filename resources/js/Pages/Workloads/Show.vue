@@ -391,7 +391,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({
     workload:    { type: Object,  required: true },
@@ -468,7 +471,7 @@ function executeAction() {
 
     router[method](url, {}, {
         onFinish:  () => { isProcessing.value = false },
-        onSuccess: () => { showModal.value = false },
+        onSuccess: () => { toast.success('Yuklama muvaffaqiyatli o\'chirildi!'); router.visit('/workloads') },
         onError:   () => { isProcessing.value = false },
     })
 }

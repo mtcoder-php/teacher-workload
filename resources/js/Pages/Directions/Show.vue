@@ -176,7 +176,7 @@ const deleteTarget = ref(null)
 function doDelete() {
     deleting.value = true
     router.delete(`/directions/${props.direction.id}`, {
-        onSuccess: () => { toast.success('Yo\'nalish muvaffaqiyatli o\'chirildi!'); router.visit('/directions') },
+        onSuccess: () => { toast.success("Yo'nalish muvaffaqiyatli o'chirildi!"); router.visit('/directions') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

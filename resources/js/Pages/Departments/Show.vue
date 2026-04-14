@@ -183,7 +183,7 @@ const deleteTarget = ref(null)
 function doDelete() {
     deleting.value = true
     router.delete(`/departments/${props.department.id}`, {
-        onSuccess: () => { toast.success('Kafedra muvaffaqiyatli o\'chirildi!'); router.visit('/departments') },
+        onSuccess: () => { toast.success("Kafedra muvaffaqiyatli o'chirildi!"); router.visit('/departments') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

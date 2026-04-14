@@ -184,7 +184,7 @@ function formatDate(date) {
 function doDelete() {
     deleting.value = true
     router.delete(`/faculties/${props.faculty.id}`, {
-        onSuccess: () => { toast.success('Fakultet muvaffaqiyatli o\'chirildi!'); router.visit('/faculties') },
+        onSuccess: () => { toast.success("Fakultet muvaffaqiyatli o'chirildi!"); router.visit('/faculties') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

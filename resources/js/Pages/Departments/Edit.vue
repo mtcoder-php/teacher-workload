@@ -128,8 +128,7 @@ const form = useForm({
 
 const submit = () => form.put(`/departments/${props.department.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Kafedra muvaffaqiyatli yangilandi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
-
+    onSuccess: () => toast.success("Kafedra muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

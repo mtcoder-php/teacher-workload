@@ -327,9 +327,9 @@ const filteredDirections = computed(() =>
     form.department_id ? props.directions?.filter(d => d.department_id === form.department_id) : props.directions
 )
 
-const submit = () => form.post('/subjects', {
+const submit = () => form.post(`/subjects`, {
     preserveScroll: true,
     onSuccess: () => toast.success("Fan muvaffaqiyatli qo'shildi!"),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

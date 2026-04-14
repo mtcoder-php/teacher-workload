@@ -178,8 +178,7 @@ const availableCourses = computed(() => {
 
 const submit = () => form.put(`/groups/${props.group.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Guruh muvaffaqiyatli yangilandi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
-
+    onSuccess: () => toast.success("Guruh muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

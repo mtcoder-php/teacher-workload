@@ -285,10 +285,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import {Head, Link, router, usePage} from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 
 const route = window.route
+const toast = useToast()
 const page  = usePage()
 
 const props = defineProps({
@@ -361,7 +363,7 @@ function bulkAction(action) {
     isBulking.value = true
     router.post(route('workloads.bulk-action'), { ids: selectedIds.value, action }, {
         preserveScroll: true,
-        onSuccess: () => { selectedIds.value = [] },
+        onSuccess: () => { toast.success('Amal muvaffaqiyatli bajarildi!'); selectedIds.value = [] },
         onFinish:  () => { isBulking.value = false },
     })
 }
@@ -369,7 +371,10 @@ function bulkAction(action) {
 // ─── Delete ───────────────────────────────────────────────────────────────────
 function deleteWorkload(id) {
     if (confirm("Rostdan ham o'chirmoqchimisiz?")) {
-        router.delete(route('workloads.destroy', id), { preserveScroll: true })
+        router.delete(route('workloads.destroy', id), {
+            onSuccess: () => toast.success("Yuklama o'chirildi!"),
+            onError:   () => toast.error("O'chirishda xatolik!"),
+        })
     }
 }
 

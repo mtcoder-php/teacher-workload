@@ -170,9 +170,9 @@ const availableCourses = computed(() => {
     return []
 })
 
-const submit = () => form.post('/groups', {
+const submit = () => form.post(`/groups`, {
     preserveScroll: true,
     onSuccess: () => toast.success("Guruh muvaffaqiyatli qo'shildi!"),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

@@ -110,7 +110,7 @@ const form = useForm({
 
 const submit = () => form.put(`/academic-years/${props.academicYear.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('O\'quv yili muvaffaqiyatli yangilandi!'),
-onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onSuccess: () => toast.success("O'quv yili muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

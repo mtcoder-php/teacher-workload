@@ -141,7 +141,7 @@ const form = useForm({
 
 const submit = () => form.put(`/directions/${props.direction.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Yo\'nalish muvaffaqiyatli yangilandi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onSuccess: () => toast.success("Yo'nalish muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

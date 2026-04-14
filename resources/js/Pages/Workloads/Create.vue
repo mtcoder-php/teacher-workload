@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { useToast } from '@/Composables/useToast'
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+const toast = useToast()
 
 const props = defineProps({
     departments: Array,
@@ -176,9 +179,7 @@ const totalHours = computed(() => {
 const submit = () => {
     form.post('/workloads', {
         preserveScroll: true,
-        onSuccess: () => {
-            // Success
-        },
+        onSuccess: () => toast.success('Yuklama muvaffaqiyatli yaratildi!'),
     });
 };
 </script>

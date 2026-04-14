@@ -323,8 +323,7 @@ const filteredDirections = computed(() =>
 
 const submit = () => form.put(`/subjects/${props.subject.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('Fan muvaffaqiyatli yangilandi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
-
+    onSuccess: () => toast.success("Fan muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

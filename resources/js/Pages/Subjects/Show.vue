@@ -382,7 +382,7 @@ const deleteTarget = ref(null)
 function doDelete() {
     deleting.value = true
     router.delete(`/subjects/${deleteTarget.value.id}`, {
-        onSuccess: () => { toast.success('Fan muvaffaqiyatli o\'chirildi!'); router.visit('/subjects') },
+        onSuccess: () => { toast.success("Fan muvaffaqiyatli o'chirildi!"); router.visit('/subjects') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

@@ -144,6 +144,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useToast } from '@/Composables/useToast'
 import { Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import WizardProgress from '@/Components/Workloads/WizardProgress.vue'
@@ -167,6 +168,7 @@ const props = defineProps({
 const totalSteps = 4    // Step2 (guruhlar) birinchi qadamga kiritildi
 const currentStep = ref(1)
 const isSaving    = ref(false)
+const toast        = useToast()
 
 const stepTitles = [
     { label: 'Kafedra & Guruhlar' },
@@ -234,13 +236,17 @@ function onSubjectLoaded() {
 function saveDraft() {
     isSaving.value = true
     router.post('/workloads', { ...form, status: 'draft' }, {
-        onFinish: () => { isSaving.value = false },
+        onSuccess: () => toast.success('Qoralama muvaffaqiyatli saqlandi!'),
+        onError:   (e) => toast.error(e?.error ?? 'Saqlashda xatolik!'),
+        onFinish:  () => { isSaving.value = false },
     })
 }
 function submitForm() {
     isSaving.value = true
     router.post('/workloads', { ...form, status: 'pending' }, {
-        onFinish: () => { isSaving.value = false },
+        onSuccess: () => toast.success('Yuklama yaratildi va tekshiruvga yuborildi!'),
+        onError:   (e) => toast.error(e?.error ?? 'Xatolik yuz berdi!'),
+        onFinish:  () => { isSaving.value = false },
     })
 }
 </script>

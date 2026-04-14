@@ -220,9 +220,9 @@ const form = useForm({
     employment_type: '', hire_date: '', birth_date: '', passport_serial: '', inn: '', address: '',
 })
 
-const submit = () => form.post('/teachers', {
-        preserveScroll: true,
-        onSuccess: () => toast.success('O\'qituvchi muvaffaqiyatli qo\'shildi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+const submit = () => form.post(`/teachers`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success("O'qituvchi muvaffaqiyatli qo'shildi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

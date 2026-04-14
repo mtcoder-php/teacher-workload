@@ -229,7 +229,7 @@ const form = useForm({
 
 const submit = () => form.put(`/teachers/${props.teacher.id}`, {
     preserveScroll: true,
-    onSuccess: () => toast.success('O\'qituvchi muvaffaqiyatli yangilandi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+    onSuccess: () => toast.success("O'qituvchi muvaffaqiyatli yangilandi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>

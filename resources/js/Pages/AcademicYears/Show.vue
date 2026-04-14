@@ -181,7 +181,7 @@ function setActive() {
 function doDelete() {
     deleting.value = true
     router.delete(`/academic-years/${props.academicYear.id}`, {
-        onSuccess: () => { toast.success('O\'quv yili muvaffaqiyatli o\'chirildi!'); router.visit('/academic-years') },
+        onSuccess: () => { toast.success("O'quv yili muvaffaqiyatli o'chirildi!"); router.visit('/academic-years') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

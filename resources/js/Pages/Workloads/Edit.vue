@@ -292,8 +292,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 const route = window.route
+const toast = useToast()
 // ─── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps({
     workload: { type: Object, required: true },
@@ -488,6 +490,9 @@ const progressBarClass = computed(() => {
 // ─── Saqlash ─────────────────────────────────────────────────────────────────
 function submit() {
     if (hasOverLimit.value || hasBelowOriginal.value) return
-    form.put(route('workloads.update', props.workload.id))
+    form.put(route('workloads.update', props.workload.id), {
+        onSuccess: () => toast.success('Yuklama muvaffaqiyatli yangilandi!'),
+        onError:   () => toast.error('Xatolik yuz berdi!'),
+    })
 }
 </script>

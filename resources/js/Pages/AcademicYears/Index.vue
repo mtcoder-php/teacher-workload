@@ -125,7 +125,7 @@ function doDelete() {
     deleting.value = true
     router.delete(`/academic-years/${deleteTarget.value.id}`, {
         onSuccess: () => toast.success("O'quv yili muvaffaqiyatli o'chirildi!"),
-        onError:   () => toast.error("O\'chirishda xatolik!"),
+        onError:   () => toast.error("O'chirishda xatolik!"),
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

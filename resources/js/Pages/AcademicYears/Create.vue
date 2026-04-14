@@ -106,9 +106,9 @@ const form = useForm({
     name: '', start_date: '', end_date: '', is_active: false,
 })
 
-const submit = () => form.post('/academic-years', {
-        preserveScroll: true,
-        onSuccess: () => toast.success('O\'quv yili muvaffaqiyatli qo\'shildi!'),
-    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+const submit = () => form.post(`/academic-years`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success("O'quv yili muvaffaqiyatli qo'shildi!"),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
 })
 </script>
