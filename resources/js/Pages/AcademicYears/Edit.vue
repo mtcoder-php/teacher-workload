@@ -86,9 +86,12 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({ academicYear: Object })
 
@@ -105,5 +108,9 @@ const form = useForm({
     is_active: props.academicYear.is_active,
 })
 
-const submit = () => form.put(`/academic-years/${props.academicYear.id}`, { preserveScroll: true })
+const submit = () => form.put(`/academic-years/${props.academicYear.id}`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success('O\'quv yili muvaffaqiyatli yangilandi!'),
+onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

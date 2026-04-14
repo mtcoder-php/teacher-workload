@@ -120,9 +120,12 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({ direction: Object, departments: Array })
 
@@ -136,5 +139,9 @@ const form = useForm({
     is_active: props.direction.is_active,
 })
 
-const submit = () => form.put(`/directions/${props.direction.id}`, { preserveScroll: true })
+const submit = () => form.put(`/directions/${props.direction.id}`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success('Yo\'nalish muvaffaqiyatli yangilandi!'),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

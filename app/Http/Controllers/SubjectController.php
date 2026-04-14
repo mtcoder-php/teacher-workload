@@ -60,7 +60,7 @@ class SubjectController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%");
             });
         }
 
@@ -134,9 +134,9 @@ class SubjectController extends Controller
                 ['value' => 4, 'label' => '4-kurs'],
             ],
             'subjectTypes' => [
-                ['value' => 'asosiy', 'label' => 'Asosiy'],
-                ['value' => 'majburiy', 'label' => 'Majburiy'],
-                ['value' => 'tanlov', 'label' => 'Tanlov'],
+                ['value' => 'asosiy',    'label' => 'Asosiy'],
+                ['value' => 'yordamchi', 'label' => 'Yordamchi'],
+                ['value' => 'ixtiyoriy', 'label' => 'Ixtiyoriy'],
             ],
             'educationForms' => [
                 ['value' => 'kunduzgi', 'label' => 'Kunduzgi'],
@@ -156,10 +156,15 @@ class SubjectController extends Controller
      */
     public function store(StoreSubjectRequest $request)
     {
-        Subject::create($request->validated());
+        try {
+            Subject::create($request->validated());
 
-        return redirect()->route('subjects.index')
-            ->with('success', 'Fan muvaffaqiyatli qo\'shildi');
+            return redirect()->route('subjects.index')
+                ->with('success', 'Fan muvaffaqiyatli qo\'shildi');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Fan qo\'shishda xatolik: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -233,10 +238,10 @@ class SubjectController extends Controller
                 ['value' => 3, 'label' => '3-kurs'],
                 ['value' => 4, 'label' => '4-kurs'],
             ],
-             'subjectTypes' => [
-                ['value' => 'asosiy', 'label' => 'Asosiy'],
-                ['value' => 'majburiy', 'label' => 'Majburiy'],
-                ['value' => 'tanlov', 'label' => 'Tanlov'],
+            'subjectTypes' => [
+                ['value' => 'asosiy',    'label' => 'Asosiy'],
+                ['value' => 'yordamchi', 'label' => 'Yordamchi'],
+                ['value' => 'ixtiyoriy', 'label' => 'Ixtiyoriy'],
             ],
             'educationForms' => [
                 ['value' => 'kunduzgi', 'label' => 'Kunduzgi'],
@@ -256,10 +261,15 @@ class SubjectController extends Controller
      */
     public function update(UpdateSubjectRequest $request, Subject $subject)
     {
-        $subject->update($request->validated());
+        try {
+            $subject->update($request->validated());
 
-        return redirect()->route('subjects.index')
-            ->with('success', 'Fan muvaffaqiyatli yangilandi');
+            return redirect()->route('subjects.index')
+                ->with('success', 'Fan muvaffaqiyatli yangilandi');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Fan yangilashda xatolik: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -284,14 +294,19 @@ class SubjectController extends Controller
      */
     public function toggleActive(Subject $subject)
     {
-        $subject->update([
-            'is_active' => !$subject->is_active
-        ]);
+        try {
+            $subject->update([
+                'is_active' => !$subject->is_active
+            ]);
 
-        $status = $subject->is_active ? 'faollashtirildi' : 'faolsizlantirildi';
+            $status = $subject->is_active ? 'faollashtirildi' : 'faolsizlantirildi';
 
-        return redirect()->back()
-            ->with('success', "Fan muvaffaqiyatli {$status}");
+            return redirect()->back()
+                ->with('success', "Fan muvaffaqiyatli {$status}");
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Xatolik: ' . $e->getMessage());
+        }
     }
 
     /**

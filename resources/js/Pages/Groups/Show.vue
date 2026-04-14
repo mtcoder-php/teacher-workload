@@ -183,8 +183,11 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
+
+const toast = useToast()
 
 const props = defineProps({
     group:           Object,
@@ -197,7 +200,7 @@ const deleteTarget = ref(null)
 function doDelete() {
     deleting.value = true
     router.delete(`/groups/${props.group.id}`, {
-        onSuccess: () => router.visit('/groups'),
+        onSuccess: () => { toast.success('Guruh muvaffaqiyatli o\'chirildi!'); router.visit('/groups') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

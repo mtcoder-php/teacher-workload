@@ -265,9 +265,12 @@
 <script setup>
 import { computed } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline, BookOutline, LayersOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({
     subject: Object, departments: Array, directions: Array, courseLevels: Array,
@@ -318,5 +321,10 @@ const filteredDirections = computed(() =>
     form.department_id ? props.directions?.filter(d => d.department_id === form.department_id) : props.directions
 )
 
-const submit = () => form.put(`/subjects/${props.subject.id}`, { preserveScroll: true })
+const submit = () => form.put(`/subjects/${props.subject.id}`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success('Fan muvaffaqiyatli yangilandi!'),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+
+})
 </script>

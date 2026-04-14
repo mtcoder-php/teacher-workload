@@ -71,10 +71,15 @@ class DepartmentController extends Controller
      */
     public function store(StoreDepartmentRequest $request)
     {
-        Department::create($request->validated());
+        try {
+            Department::create($request->validated());
 
-        return redirect()->route('departments.index')
-            ->with('success', 'Kafedra muvaffaqiyatli qo\'shildi');
+            return redirect()->route('departments.index')
+                ->with('success', 'Kafedra muvaffaqiyatli qo\'shildi');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Kafedra qo\'shishda xatolik: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -130,16 +135,17 @@ class DepartmentController extends Controller
      */
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
+        try {
+            $department->update($request->validated());
 
-        $department->update($request->validated());
-
-        return redirect()->route('departments.index')
-            ->with('success', 'Kafedra muvaffaqiyatli yangilandi');
+            return redirect()->route('departments.index')
+                ->with('success', 'Kafedra muvaffaqiyatli yangilandi');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Kafedra yangilashda xatolik: ' . $e->getMessage());
+        }
     }
 
-    /**
-     * Kafedraning o'chirish
-     */
     public function destroy(Department $department)
     {
         // Kafedraga o'qituvchilar biriktirilgan bo'lsa, o'chirishga ruxsat bermaslik

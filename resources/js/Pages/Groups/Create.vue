@@ -144,14 +144,18 @@
 <script setup>
 import { computed } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
-const props = defineProps({ directions: Array })
+const toast = useToast()
+
+const props = defineProps({ directions: Array, currentYear: Object })
 
 const form = useForm({
     name: '', code: '', direction_id: null, course: null,
+    academic_year_id: props.currentYear?.id ?? null,
     education_type: '', education_language: 'uzbek', student_count: 0, is_active: true,
 })
 
@@ -166,5 +170,9 @@ const availableCourses = computed(() => {
     return []
 })
 
-const submit = () => form.post('/groups', { preserveScroll: true })
+const submit = () => form.post('/groups', {
+    preserveScroll: true,
+    onSuccess: () => toast.success("Guruh muvaffaqiyatli qo'shildi!"),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

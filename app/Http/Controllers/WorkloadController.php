@@ -194,7 +194,8 @@ class WorkloadController extends Controller
 
         } catch (\Exception $e) {
             Log::error('store workload: ' . $e->getMessage());
-            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+            return back()->withInput()
+                ->with('error', 'Yuklama yaratishda xatolik: ' . $e->getMessage());
         }
     }
 

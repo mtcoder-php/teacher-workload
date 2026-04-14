@@ -141,9 +141,12 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
+
+const toast = useToast()
 
 const props = defineProps({ subjects: Object, departments: Array, directions: Array, filters: Object, courseLevels: Array })
 
@@ -166,8 +169,9 @@ function askDelete(item) { deleteTarget.value = item }
 function doDelete() {
     deleting.value = true
     router.delete(`/subjects/${deleteTarget.value.id}`, {
-        preserveScroll: true,
-        onFinish: () => { deleting.value = false; deleteTarget.value = null },
+        onSuccess: () => toast.success("Fan muvaffaqiyatli o'chirildi!"),
+        onError:   () => toast.error("O\'chirishda xatolik!"),
+        onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }
 function typeLabel(t) { return { asosiy:"Asosiy", yordamchi:"Yordamchi", ixtiyoriy:"Ixtiyoriy" }[t] ?? t }

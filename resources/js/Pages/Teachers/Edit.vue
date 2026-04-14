@@ -191,12 +191,15 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import {
     ArrowBackOutline, SaveOutline, RefreshOutline,
     PersonOutline, BriefcaseOutline, DocumentTextOutline,
 } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({ teacher: Object, departments: Array })
 
@@ -224,5 +227,9 @@ const form = useForm({
     is_active: props.teacher.is_active ?? true,
 })
 
-const submit = () => form.put(`/teachers/${props.teacher.id}`, { preserveScroll: true })
+const submit = () => form.put(`/teachers/${props.teacher.id}`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success('O\'qituvchi muvaffaqiyatli yangilandi!'),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

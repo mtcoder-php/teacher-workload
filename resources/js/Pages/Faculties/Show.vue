@@ -160,8 +160,11 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
+
+const toast = useToast()
 
 const props = defineProps({
     faculty:           Object,
@@ -181,7 +184,7 @@ function formatDate(date) {
 function doDelete() {
     deleting.value = true
     router.delete(`/faculties/${props.faculty.id}`, {
-        onSuccess: () => router.visit('/faculties'),
+        onSuccess: () => { toast.success('Fakultet muvaffaqiyatli o\'chirildi!'); router.visit('/faculties') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

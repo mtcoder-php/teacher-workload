@@ -372,7 +372,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch  } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import { Icon } from '@vicons/utils';
 import {
     GridOutline,
@@ -526,19 +526,6 @@ const formatRelativeTime = (dateString) => {
     return date.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
 };
 
-
-
-// Flash xabarlarni kuzatish — sahifa o'tishlarida toast chiqarish
-watch(
-    () => usePage().props.flash,
-    (flash) => {
-        if (flash?.success) toast.success(flash.success)
-        if (flash?.error)   toast.error(flash.error)
-        if (flash?.warning) toast.warning(flash.warning)
-        if (flash?.info)    toast.info(flash.info)
-    },
-    { deep: true }
-)
 
 // Inertia validation xatolari — birinchi xatoni toast da ko'rsatish
 watch(

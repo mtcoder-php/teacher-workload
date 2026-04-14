@@ -22,7 +22,8 @@ class StoreGroupRequest extends FormRequest
                 'max:50',
                 Rule::unique('groups', 'code')
             ],
-            'direction_id' => ['required', 'exists:directions,id'],
+            'direction_id'    => ['required', 'exists:directions,id'],
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
             'course' => ['required', 'integer', 'min:1', 'max:6'],
             'education_type' => ['required', 'string', 'in:kunduzgi,sirtqi,kechki,masofaviy'],
             'education_language' => ['required', 'string', 'in:uzbek,russian'], // ✅ QOSHILDI
@@ -73,7 +74,15 @@ class StoreGroupRequest extends FormRequest
         if (!$this->has('is_active')) {
             $this->merge(['is_active' => true]);
         }
-        
+
+        // Joriy o'quv yilini avtomatik qo'shish
+        if (!$this->has('academic_year_id') || !$this->academic_year_id) {
+            $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
+            if ($activeYear) {
+                $this->merge(['academic_year_id' => $activeYear->id]);
+            }
+        }
+
         // ✅ Default qiymat
         if (!$this->has('education_language')) {
             $this->merge(['education_language' => 'uzbek']);

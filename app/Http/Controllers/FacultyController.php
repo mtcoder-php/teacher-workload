@@ -60,11 +60,16 @@ class FacultyController extends Controller
 
     public function store(StoreFacultyRequest $request)
     {
-        Faculty::create($request->validated());
+        try {
+            Faculty::create($request->validated());
 
-        return redirect()
-            ->route('faculties.index')
-            ->with('success', 'Fakultet muvaffaqiyatli qo\'shildi! ✅');
+            return redirect()
+                ->route('faculties.index')
+                ->with('success', 'Fakultet muvaffaqiyatli qo\'shildi! ✅');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Fakultet qo\'shishda xatolik: ' . $e->getMessage());
+        }
     }
 
     public function show(Faculty $faculty)
@@ -139,16 +144,11 @@ class FacultyController extends Controller
     public function destroy(Faculty $faculty)
     {
         try {
+            // Kafedra tekshiruvi
             if ($faculty->departments()->count() > 0) {
                 return redirect()
                     ->route('faculties.index')
                     ->with('error', 'Bu fakultetda kafedralar mavjud. Avval kafedralarni o\'chiring! ❌');
-            }
-
-            if ($faculty->groups()->count() > 0) {
-                return redirect()
-                    ->route('faculties.index')
-                    ->with('error', 'Bu fakultetda guruhlar mavjud. Avval guruhlarni o\'chiring! ❌');
             }
 
             $faculty->delete();

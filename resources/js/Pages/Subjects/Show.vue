@@ -365,8 +365,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3';
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DeleteModal from '@/Components/DeleteModal.vue';
 
@@ -381,7 +382,7 @@ const deleteTarget = ref(null)
 function doDelete() {
     deleting.value = true
     router.delete(`/subjects/${deleteTarget.value.id}`, {
-        onSuccess: () => router.visit('/subjects'),
+        onSuccess: () => { toast.success('Fan muvaffaqiyatli o\'chirildi!'); router.visit('/subjects') },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

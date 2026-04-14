@@ -199,6 +199,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import {
     ArrowBackOutline, SaveOutline, RefreshOutline,
@@ -211,11 +212,17 @@ defineProps({ departments: Array })
 
 const showPass = ref(false)
 
+const toast = useToast()
+
 const form = useForm({
     name: '', email: '', phone: '', password: '', password_confirmation: '',
     department_id: null, position: '', academic_degree: '', academic_title: '',
     employment_type: '', hire_date: '', birth_date: '', passport_serial: '', inn: '', address: '',
 })
 
-const submit = () => form.post('/teachers', { preserveScroll: true })
+const submit = () => form.post('/teachers', {
+        preserveScroll: true,
+        onSuccess: () => toast.success('O\'qituvchi muvaffaqiyatli qo\'shildi!'),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

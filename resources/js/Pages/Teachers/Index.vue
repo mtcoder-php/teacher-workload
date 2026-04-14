@@ -130,9 +130,12 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
+
+const toast = useToast()
 
 const props = defineProps({ teachers: Object, departments: Array, filters: Object })
 
@@ -151,8 +154,9 @@ function askDelete(item) { deleteTarget.value = item }
 function doDelete() {
     deleting.value = true
     router.delete(`/teachers/${deleteTarget.value.id}`, {
-        preserveScroll: true,
-        onFinish: () => { deleting.value = false; deleteTarget.value = null },
+        onSuccess: () => toast.success("O'qituvchi muvaffaqiyatli o'chirildi!"),
+        onError:   () => toast.error("O\'chirishda xatolik!"),
+        onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }
 function empLabel(t) {

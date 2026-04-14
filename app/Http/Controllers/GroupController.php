@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\Direction;
+use App\Models\AcademicYear;
 use App\Http\Requests\StoreGroupRequest;
 use App\Http\Requests\UpdateGroupRequest;
 use Illuminate\Http\Request;
@@ -69,11 +70,14 @@ class GroupController extends Controller
 
     public function create()
     {
+        $currentYear = AcademicYear::where('is_active', true)->first();
+
         return inertia('Groups/Create', [
-            'directions' => Direction::where('is_active', true)
+            'directions'   => Direction::where('is_active', true)
                 ->with('department')
                 ->orderBy('name')
                 ->get(),
+            'currentYear'  => $currentYear,
         ]);
     }
 

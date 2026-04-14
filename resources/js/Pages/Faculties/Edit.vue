@@ -99,9 +99,12 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+const toast = useToast()
 
 const props = defineProps({ faculty: Object, deans: Array })
 
@@ -113,5 +116,9 @@ const form = useForm({
     is_active: props.faculty.is_active ?? true,
 })
 
-const submit = () => form.put(`/faculties/${props.faculty.id}`, { preserveScroll: true })
+const submit = () => form.put(`/faculties/${props.faculty.id}`, {
+    preserveScroll: true,
+    onSuccess: () => toast.success('Fakultet muvaffaqiyatli yangilandi!'),
+    onError:   () => toast.error("Xatolik! Ma'lumotlarni tekshiring."),
+})
 </script>

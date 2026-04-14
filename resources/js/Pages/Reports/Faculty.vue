@@ -13,9 +13,9 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <select v-model="selectedYear" @change="reload"
-                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
                             <option v-for="y in academicYears" :key="y.id" :value="y.id">
-                                {{ y.name }}{{ y.is_active ? ' ✓' : '' }}
+                                {{ y.name }}
                             </option>
                         </select>
                         <a :href="exportUrl"

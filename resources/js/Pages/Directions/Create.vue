@@ -120,16 +120,23 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import { Icon } from '@vicons/utils'
 import { ArrowBackOutline, SaveOutline, RefreshOutline } from '@vicons/ionicons5'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 defineProps({ departments: Array })
 
+const toast = useToast()
+
 const form = useForm({
     name: '', code: '', department_id: null, degree_type: null,
     duration_years: 4, description: '', is_active: true,
 })
 
-const submit = () => form.post('/directions', { preserveScroll: true })
+const submit = () => form.post('/directions', {
+        preserveScroll: true,
+        onSuccess: () => toast.success('Yo\'nalish muvaffaqiyatli qo\'shildi!'),
+    onError:   () => toast.error('Xatolik! Ma\'lumotlarni tekshiring.'),
+})
 </script>

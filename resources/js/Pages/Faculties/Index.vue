@@ -148,9 +148,12 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
+
+const toast = useToast()
 
 const props = defineProps({ faculties: Object, filters: Object })
 
@@ -168,8 +171,9 @@ function doDelete() {
     if (!deleteTarget.value) return
     deleting.value = true
     router.delete(`/faculties/${deleteTarget.value.id}`, {
-        preserveScroll: true,
-        onFinish: () => { deleting.value = false; deleteTarget.value = null },
+        onSuccess: () => toast.success("Fakultet muvaffaqiyatli o'chirildi!"),
+        onError:   () => toast.error("O\'chirishda xatolik!"),
+        onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }
 </script>

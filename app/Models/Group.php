@@ -16,6 +16,7 @@ class Group extends Model
         'name',
         'code',
         'direction_id',
+        'academic_year_id',
         'course',
         'education_type',
         'education_language',

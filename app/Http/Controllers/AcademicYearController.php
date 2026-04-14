@@ -102,9 +102,9 @@ class AcademicYearController extends Controller
                 ->with('error', 'Joriy o\'quv yilini o\'chirish mumkin emas');
         }
 
-        if ($academicYear->semesters()->count() > 0) {
+        if ($academicYear->workloads()->count() > 0) {
             return redirect()->route('academic-years.index')
-                ->with('error', 'Bu o\'quv yilida semestrlar mavjud. Avval ularni o\'chiring');
+                ->with('error', 'Bu o\'quv yilida yuklamalar mavjud. Avval yuklamalarni o\'chiring');
         }
 
         DB::beginTransaction();

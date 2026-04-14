@@ -7,8 +7,8 @@
             <div class="flex items-center justify-between gap-3">
                 <span>{{ teacher.user?.name }}</span>
                 <Link :href="`/teachers/${teacher.id}/edit`"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
-                Tahrirlash
+                      class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
+                    Tahrirlash
                 </Link>
             </div>
         </template>
@@ -30,18 +30,18 @@
                                 <span
                                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-700 shadow-sm">
                                     <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                     {{ teacher.user?.email }}
                                 </span>
                                 <span v-if="teacher.user?.phone"
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-700 shadow-sm">
+                                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-gray-700 shadow-sm">
                                     <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                     </svg>
                                     {{ teacher.user?.phone }}
                                 </span>
@@ -58,9 +58,9 @@
                                 <span :class="teacher.is_active
                                     ? 'bg-green-100 text-green-800'
                                     : 'bg-red-100 text-red-800'"
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold">
+                                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold">
                                     <span :class="teacher.is_active ? 'bg-green-400' : 'bg-red-400'"
-                                        class="w-2 h-2 rounded-full mr-2"></span>
+                                          class="w-2 h-2 rounded-full mr-2"></span>
                                     {{ teacher.is_active ? 'Faol' : 'Nofaol' }}
                                 </span>
                             </div>
@@ -80,7 +80,7 @@
                         <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                         <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
@@ -112,7 +112,7 @@
                         <div class="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
@@ -183,7 +183,7 @@
                         </div>
 
                         <div v-if="!teacher.birth_date && !teacher.passport_serial && !teacher.inn && !teacher.address"
-                            class="text-center py-8 text-gray-500">
+                             class="text-center py-8 text-gray-500">
                             <p class="text-sm">Qo'shimcha ma'lumotlar kiritilmagan</p>
                         </div>
                     </div>
@@ -199,7 +199,7 @@
                 <div class="p-6">
                     <div v-if="teacher.workloads && teacher.workloads.length > 0" class="space-y-4">
                         <div v-for="workload in teacher.workloads" :key="workload.id"
-                            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                             class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3 mb-2">
                                     <h3 class="font-medium text-gray-900">{{ workload.subject?.name }}</h3>
@@ -215,16 +215,16 @@
                                 </div>
                             </div>
                             <Link :href="`/workloads/${workload.id}`"
-                                class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
-                            Batafsil →
+                                  class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                Batafsil →
                             </Link>
                         </div>
                     </div>
                     <div v-else class="text-center py-8">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
+                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         <p class="mt-2 text-sm text-gray-500">Hozircha yuklamalar yo'q</p>
                     </div>
@@ -234,16 +234,16 @@
             <!-- Actions -->
             <div class="flex justify-between items-center">
                 <Link href="/teachers"
-                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Orqaga</span>
+                      class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Orqaga</span>
                 </Link>
 
                 <button @click="showDeleteModal = true"
-                    class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
                     O'chirish
                 </button>
             </div>
@@ -260,7 +260,7 @@
                 </p>
                 <div class="flex justify-end space-x-3">
                     <button @click="showDeleteModal = false"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                         Bekor qilish
                     </button>
                     <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
@@ -273,9 +273,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3';
+import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+const toast = useToast()
 
 const props = defineProps({
     teacher: Object,
@@ -305,6 +308,7 @@ const formatDate = (date) => {
 const confirmDelete = () => {
     router.delete(`/teachers/${props.teacher.id}`, {
         onSuccess: () => {
+            toast.success("O'qituvchi muvaffaqiyatli o'chirildi!");
             router.visit('/teachers');
         },
     });
