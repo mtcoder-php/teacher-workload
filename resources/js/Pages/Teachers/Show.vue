@@ -274,7 +274,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -308,8 +308,9 @@ const formatDate = (date) => {
 const confirmDelete = () => {
     router.delete(`/teachers/${props.teacher.id}`, {
         onSuccess: () => {
-            toast.success("O'qituvchi muvaffaqiyatli o'chirildi!");
-            router.visit('/teachers');
+            const flash = usePage().props.flash
+            if (flash?.error) toast.error(flash.error)
+            else { toast.success("O'qituvchi muvaffaqiyatli o'chirildi!"); router.visit('/teachers') }
         },
     });
 };

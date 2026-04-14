@@ -104,54 +104,66 @@ class StoreWorkloadRequest extends FormRequest
             $subject = Subject::find($this->subject_id);
             if (!$subject) return;
 
-            $dist = Workload::where('subject_id', $this->subject_id)
+            $groupIds = $this->input('group_ids', []);
+
+            // Ma'ruza: GLOBAL (barcha guruhlar bo'yicha)
+            $lectureDist = Workload::where('subject_id', $this->subject_id)
                 ->where('academic_year_id', $academicYearId)
                 ->selectRaw('
-                    COALESCE(SUM(semester_1_lecture),0)    as s1_lec,
-                    COALESCE(SUM(semester_1_practical),0)  as s1_pra,
-                    COALESCE(SUM(semester_1_laboratory),0) as s1_lab,
-                    COALESCE(SUM(semester_1_seminar),0)    as s1_sem,
-                    COALESCE(SUM(semester_1_practice),0)   as s1_prc,
-                    COALESCE(SUM(semester_1_exam),0)       as s1_ex,
-                    COALESCE(SUM(semester_1_test),0)       as s1_tst,
-                    COALESCE(SUM(semester_2_lecture),0)    as s2_lec,
-                    COALESCE(SUM(semester_2_practical),0)  as s2_pra,
-                    COALESCE(SUM(semester_2_laboratory),0) as s2_lab,
-                    COALESCE(SUM(semester_2_seminar),0)    as s2_sem,
-                    COALESCE(SUM(semester_2_practice),0)   as s2_prc,
-                    COALESCE(SUM(semester_2_exam),0)       as s2_ex,
-                    COALESCE(SUM(semester_2_test),0)       as s2_tst,
-                    COALESCE(SUM(coursework_hours),0)      as cw,
-                    COALESCE(SUM(diploma_hours),0)         as dip,
-                    COALESCE(SUM(consultation_hours),0)    as con
-                ')
-                ->first();
+                    COALESCE(SUM(semester_1_lecture),0) as s1_lec,
+                    COALESCE(SUM(semester_2_lecture),0) as s2_lec
+                ')->first();
+
+            // Amaliy: faqat SHU guruhlar bo'yicha, lecture_only bo'lmagan
+            $practiceQuery = Workload::where('subject_id', $this->subject_id)
+                ->where('academic_year_id', $academicYearId)
+                ->where(fn($q) => $q->where('is_potok', false)
+                    ->orWhere('workload_type', '!=', 'lecture_only'));
+            if (!empty($groupIds)) {
+                $practiceQuery->whereHas('groups', fn($g) => $g->whereIn('groups.id', $groupIds));
+            }
+            $practiceDist = $practiceQuery->selectRaw('
+                COALESCE(SUM(semester_1_practical),0)  as s1_pra,
+                COALESCE(SUM(semester_1_laboratory),0) as s1_lab,
+                COALESCE(SUM(semester_1_seminar),0)    as s1_sem,
+                COALESCE(SUM(semester_1_practice),0)   as s1_prc,
+                COALESCE(SUM(semester_1_exam),0)       as s1_ex,
+                COALESCE(SUM(semester_1_test),0)       as s1_tst,
+                COALESCE(SUM(semester_2_practical),0)  as s2_pra,
+                COALESCE(SUM(semester_2_laboratory),0) as s2_lab,
+                COALESCE(SUM(semester_2_seminar),0)    as s2_sem,
+                COALESCE(SUM(semester_2_practice),0)   as s2_prc,
+                COALESCE(SUM(semester_2_exam),0)       as s2_ex,
+                COALESCE(SUM(semester_2_test),0)       as s2_tst,
+                COALESCE(SUM(coursework_hours),0)      as cw,
+                COALESCE(SUM(diploma_hours),0)         as dip,
+                COALESCE(SUM(consultation_hours),0)    as con
+            ')->first();
 
             $checks = [
-                'semester_1_lecture'    => ['s1_lec', '1-semestr ma\'ruza'],
-                'semester_1_practical'  => ['s1_pra', '1-semestr amaliy'],
-                'semester_1_laboratory' => ['s1_lab', '1-semestr laboratoriya'],
-                'semester_1_seminar'    => ['s1_sem', '1-semestr seminar'],
-                'semester_1_practice'   => ['s1_prc', '1-semestr amaliyot'],
-                'semester_1_exam'       => ['s1_ex',  '1-semestr imtihon'],
-                'semester_1_test'       => ['s1_tst', '1-semestr sinov'],
-                'semester_2_lecture'    => ['s2_lec', '2-semestr ma\'ruza'],
-                'semester_2_practical'  => ['s2_pra', '2-semestr amaliy'],
-                'semester_2_laboratory' => ['s2_lab', '2-semestr laboratoriya'],
-                'semester_2_seminar'    => ['s2_sem', '2-semestr seminar'],
-                'semester_2_practice'   => ['s2_prc', '2-semestr amaliyot'],
-                'semester_2_exam'       => ['s2_ex',  '2-semestr imtihon'],
-                'semester_2_test'       => ['s2_tst', '2-semestr sinov'],
-                'coursework_hours'      => ['cw',     'Kurs ishi'],
-                'diploma_hours'         => ['dip',    'Diplom ishi'],
-                'consultation_hours'    => ['con',    'Konsultatsiya'],
+                'semester_1_lecture'    => [$lectureDist->s1_lec,   '1-semestr ma\'ruza'],
+                'semester_1_practical'  => [$practiceDist->s1_pra,  '1-semestr amaliy'],
+                'semester_1_laboratory' => [$practiceDist->s1_lab,  '1-semestr laboratoriya'],
+                'semester_1_seminar'    => [$practiceDist->s1_sem,  '1-semestr seminar'],
+                'semester_1_practice'   => [$practiceDist->s1_prc,  '1-semestr amaliyot'],
+                'semester_1_exam'       => [$practiceDist->s1_ex,   '1-semestr imtihon'],
+                'semester_1_test'       => [$practiceDist->s1_tst,  '1-semestr sinov'],
+                'semester_2_lecture'    => [$lectureDist->s2_lec,   '2-semestr ma\'ruza'],
+                'semester_2_practical'  => [$practiceDist->s2_pra,  '2-semestr amaliy'],
+                'semester_2_laboratory' => [$practiceDist->s2_lab,  '2-semestr laboratoriya'],
+                'semester_2_seminar'    => [$practiceDist->s2_sem,  '2-semestr seminar'],
+                'semester_2_practice'   => [$practiceDist->s2_prc,  '2-semestr amaliyot'],
+                'semester_2_exam'       => [$practiceDist->s2_ex,   '2-semestr imtihon'],
+                'semester_2_test'       => [$practiceDist->s2_tst,  '2-semestr sinov'],
+                'coursework_hours'      => [$practiceDist->cw,      'Kurs ishi'],
+                'diploma_hours'         => [$practiceDist->dip,     'Diplom ishi'],
+                'consultation_hours'    => [$practiceDist->con,     'Konsultatsiya'],
             ];
 
-            foreach ($checks as $field => [$distKey, $label]) {
+            foreach ($checks as $field => [$used, $label]) {
                 $max       = floatval($subject->{$field} ?? 0);
-                $used      = floatval($dist->{$distKey} ?? 0);
                 $entered   = floatval($this->input($field, 0));
-                $available = max(0, $max - $used);
+                $available = max(0, $max - floatval($used));
 
                 if ($max > 0 && $entered > $available) {
                     $v->errors()->add(

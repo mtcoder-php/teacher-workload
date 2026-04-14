@@ -9,38 +9,51 @@ use App\Models\AcademicYear;
 
 class GroupSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $directions = Direction::all();
+        // Joriy o'quv yili
         $academicYear = AcademicYear::where('is_active', true)->first();
-
         if (!$academicYear) {
-            // Agar faol o'quv yili bo'lmasa, yangi yaratamiz
             $academicYear = AcademicYear::create([
-                'name' => '2025-2026',
-                'start_date' => now()->year . '-09-01',
-                'end_date' => (now()->year + 1) . '-07-15',
-                'is_active' => true,
+                'name'       => '2025-2026',
+                'start_date' => '2025-09-01',
+                'end_date'   => '2026-07-15',
+                'is_active'  => true,
             ]);
         }
 
+        // Har bir yo'nalish uchun guruhlar (har kursdan 1-2 ta)
+        $directions = Direction::all();
+
         foreach ($directions as $direction) {
-            for ($i = 1; $i <= 3; $i++) {
-                $course = rand(1, 4);
-                Group::firstOrCreate([
-                    'direction_id' => $direction->id,
-                    'academic_year_id' => $academicYear->id,
-                    'name' => "Guruh {$direction->code}-{$i}",
-                    'code' => "GRP-{$direction->id}-{$i}",
-                    'course' => $course,
-                    'student_count' => rand(15, 25),
-                    'education_type' => ['kunduzgi', 'sirtqi', 'kechki','masofaviy'][rand(0, 3)],
-                    'education_language' => ['uzbek', 'russian'][rand(0, 1)],
-                ]);
+            $maxCourse = $direction->duration_years ?? 4;
+            $prefix    = strtoupper(substr($direction->code, 0, 3));
+
+            for ($course = 1; $course <= $maxCourse; $course++) {
+                // Har kursdan 2 ta guruh
+                for ($g = 1; $g <= 2; $g++) {
+                    $year  = 25 - ($course - 1); // 2025 yil matricula
+                    $name  = "{$prefix}-{$year}-{$g}";
+                    $code  = "{$direction->code}{$course}{$g}";
+
+                    Group::firstOrCreate(
+                        ['code' => $code],
+                        [
+                            'name'             => $name,
+                            'code'             => $code,
+                            'direction_id'     => $direction->id,
+                            'academic_year_id' => $academicYear->id,
+                            'course'           => $course,
+                            'student_count'    => rand(18, 28),
+                            'education_type'   => 'kunduzgi',
+                            'education_language' => 'uzbek',
+                            'is_active'        => true,
+                        ]
+                    );
+                }
             }
         }
+
+        $this->command->info('GroupSeeder: Guruhlar yaratildi.');
     }
 }

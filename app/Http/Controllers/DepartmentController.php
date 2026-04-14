@@ -148,16 +148,33 @@ class DepartmentController extends Controller
 
     public function destroy(Department $department)
     {
-        // Kafedraga o'qituvchilar biriktirilgan bo'lsa, o'chirishga ruxsat bermaslik
+        // O'qituvchilar tekshiruvi
         if ($department->teachers()->count() > 0) {
             return redirect()->route('departments.index')
-                ->with('error', 'Bu kafedrada o\'qituvchilar mavjud. Avval ularni boshqa kafedralarga o\'tkazing. ❌');
+                ->with('error', 'Bu kafedrada o\'qituvchilar mavjud. Avval ularni boshqa kafedralarga o\'tkazing.');
         }
 
-        $department->delete();
+        // Yo'nalishlar tekshiruvi
+        if ($department->directions()->count() > 0) {
+            return redirect()->route('departments.index')
+                ->with('error', 'Bu kafedrada yo\'nalishlar mavjud. Avval yo\'nalishlarni o\'chiring.');
+        }
 
-        return redirect()->route('departments.index')
-            ->with('success', 'Kafedra muvaffaqiyatli o\'chirildi');
+        // Fanlar tekshiruvi
+        if ($department->subjects()->count() > 0) {
+            return redirect()->route('departments.index')
+                ->with('error', 'Bu kafedrada fanlar mavjud. Avval fanlarni o\'chiring.');
+        }
+
+        try {
+            $department->delete();
+
+            return redirect()->route('departments.index')
+                ->with('success', 'Kafedra muvaffaqiyatli o\'chirildi');
+        } catch (\Exception $e) {
+            return redirect()->route('departments.index')
+                ->with('error', 'Kafedreni o\'chirishda xatolik: ' . $e->getMessage());
+        }
     }
 
     /**

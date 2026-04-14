@@ -45,6 +45,12 @@ class WorkloadAjaxController extends Controller
      *   ?academic_year_id=1
      *   &group_ids[]=5&group_ids[]=6
      *   &exclude_workload_id=14   ← edit uchun
+     *
+     * MANTIQ:
+     *  - Ma'ruza soatlari: global (barcha guruhlar bo'yicha) hisoblanadi
+     *    chunki potok ma'ruzada barcha guruhlar qatnashadi
+     *  - Amaliy/lab soatlari: faqat SHU GURUH bo'yicha hisoblanadi
+     *    chunki har guruh o'z amaliy yuklamasiga ega
      */
     public function subjectDetails(Request $request, int $subjectId)
     {
@@ -52,33 +58,56 @@ class WorkloadAjaxController extends Controller
             $subject        = Subject::findOrFail($subjectId);
             $academicYearId = $request->input('academic_year_id')
                 ?? AcademicYear::where('is_active', true)->value('id');
+            $groupIds       = array_filter((array) $request->input('group_ids', []));
+            $excludeId      = $request->input('exclude_workload_id');
 
-            $query = Workload::where('subject_id', $subjectId)
+            $lectureFields  = ['semester_1_lecture', 'semester_2_lecture'];
+            $practiceFields = [
+                'semester_1_practical', 'semester_1_laboratory',
+                'semester_1_seminar',   'semester_1_practice',
+                'semester_1_exam',      'semester_1_test',
+                'semester_2_practical', 'semester_2_laboratory',
+                'semester_2_seminar',   'semester_2_practice',
+                'semester_2_exam',      'semester_2_test',
+                'coursework_hours',     'diploma_hours',
+                'consultation_hours',
+            ];
+
+            // ── 1. Ma'ruza soatlari — GLOBAL (barcha guruhlar bo'yicha) ──────
+            // Sabab: potok ma'ruzada barcha guruhlar qatnashadi,
+            // shuning uchun ma'ruza 1 marta beriladi
+            $lectureQuery = Workload::where('subject_id', $subjectId)
                 ->where('academic_year_id', $academicYearId);
-
-            // Edit: o'z soatlarini limitdan chiqarish
-            if ($excludeId = $request->input('exclude_workload_id')) {
-                $query->where('id', '!=', (int) $excludeId);
+            if ($excludeId) {
+                $lectureQuery->where('id', '!=', (int) $excludeId);
             }
+            $lectureSelect = array_map(fn($f) => "COALESCE(SUM({$f}), 0) as {$f}", $lectureFields);
+            $lectureDist   = $lectureQuery->selectRaw(implode(', ', $lectureSelect))->first();
 
-            // MUHIM: group_ids filtri YO'Q!
-            // Fan soatlarini hisoblashda BARCHA guruhlar uchun taqsimlangan
-            // soatlar hisobga olinadi. Masalan, fan soati = 100, 1-guruhga
-            // 60 soat berilgan bo'lsa, 2-guruh uchun qolgan = 40.
+            // ── 2. Amaliy soatlar — FAQAT SHU GURUH bo'yicha ────────────────
+            // Sabab: har guruh o'z amaliy yuklamasiga ega,
+            // 1-guruhga berilgan amaliy 2-guruh limitini kamaytirmasligi kerak
+            $practiceQuery = Workload::where('subject_id', $subjectId)
+                ->where('academic_year_id', $academicYearId)
+                ->where(fn($q) => $q->where('is_potok', false)
+                    ->orWhere('workload_type', '!=', 'lecture_only'));
+            if ($excludeId) {
+                $practiceQuery->where('id', '!=', (int) $excludeId);
+            }
+            if (!empty($groupIds)) {
+                $practiceQuery->whereHas('groups', fn($g) => $g->whereIn('groups.id', $groupIds));
+            }
+            $practiceSelect = array_map(fn($f) => "COALESCE(SUM({$f}), 0) as {$f}", $practiceFields);
+            $practiceDist   = $practiceQuery->selectRaw(implode(', ', $practiceSelect))->first();
 
-            // SELECT raw alias lar
-            $selectParts = array_map(
-                fn($field, $alias) => "COALESCE(SUM({$field}), 0) as {$alias}",
-                array_keys(self::FIELD_MAP),
-                array_values(self::FIELD_MAP)
-            );
-
-            $dist = $query->selectRaw(implode(', ', $selectParts))->first();
-
+            // ── Natijalarni birlashtirish ─────────────────────────────────────
             $maxHours = $remainingHours = [];
             foreach (self::FIELD_MAP as $field => $alias) {
-                $max                    = (float) ($subject->{$field} ?? 0);
-                $used                   = (float) ($dist->{$alias}   ?? 0);
+                $max  = (float) ($subject->{$field} ?? 0);
+                $used = in_array($field, $lectureFields)
+                    ? (float) ($lectureDist->{$field}  ?? 0)
+                    : (float) ($practiceDist->{$field} ?? 0);
+
                 $maxHours[$field]       = $max;
                 $remainingHours[$field] = max(0, $max - $used);
             }

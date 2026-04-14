@@ -147,7 +147,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
@@ -171,9 +171,13 @@ function doDelete() {
     if (!deleteTarget.value) return
     deleting.value = true
     router.delete(`/faculties/${deleteTarget.value.id}`, {
-        onSuccess: () => toast.success("Fakultet muvaffaqiyatli o'chirildi!"),
-        onError:   () => toast.error("O'chirishda xatolik!"),
-        onFinish:  () => { deleting.value = false; deleteTarget.value = null },
+        onSuccess: () => {
+            const flash = usePage().props.flash
+            if (flash?.error) toast.error(flash.error)
+            else toast.success("Fakultet muvaffaqiyatli o'chirildi!")
+        },
+        onError: () => toast.error("O'chirishda xatolik!"),
+        onFinish: () => { deleting.value = false; deleteTarget.value = null },
     })
 }
 </script>

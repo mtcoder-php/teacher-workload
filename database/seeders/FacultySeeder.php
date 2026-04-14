@@ -7,19 +7,17 @@ use App\Models\Faculty;
 
 class FacultySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         Faculty::firstOrCreate(
-        // Qidirish uchun shart
             ['name' => 'Yangi Asr Universiteti'],
-            // Agar topilmasa, quyidagi ma'lumotlar bilan yaratish
             [
-                'code' => 'YAU', // ✅ YETISHMAYOTGAN MAYDON QO'SHILDI
-                'name' => 'Yangi Asr Universiteti'
+                'code'      => 'YAU',
+                'name'      => 'Yangi Asr Universiteti',
+                'is_active' => true,
             ]
         );
+
+        $this->command->info('FacultySeeder: Yangi Asr Universiteti yaratildi.');
     }
 }

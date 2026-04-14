@@ -96,14 +96,14 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     | Directions - Yo'nalishlar
     |--------------------------------------------------------------------------
     */
-    Route::middleware('auth')->prefix('directions')->name('directions.')->group(function () {
+    Route::middleware('permission:directions.view')->prefix('directions')->name('directions.')->group(function () {
         Route::get('/', [DirectionController::class, 'index'])->name('index');
-        Route::get('/create', [DirectionController::class, 'create'])->name('create');
-        Route::post('/', [DirectionController::class, 'store'])->name('store');
+        Route::get('/create', [DirectionController::class, 'create'])->middleware('permission:directions.create')->name('create');
+        Route::post('/', [DirectionController::class, 'store'])->middleware('permission:directions.create')->name('store');
         Route::get('/{direction}', [DirectionController::class, 'show'])->name('show');
-        Route::get('/{direction}/edit', [DirectionController::class, 'edit'])->name('edit');
-        Route::put('/{direction}', [DirectionController::class, 'update'])->name('update');
-        Route::delete('/{direction}', [DirectionController::class, 'destroy'])->name('destroy');
+        Route::get('/{direction}/edit', [DirectionController::class, 'edit'])->middleware('permission:directions.edit')->name('edit');
+        Route::put('/{direction}', [DirectionController::class, 'update'])->middleware('permission:directions.edit')->name('update');
+        Route::delete('/{direction}', [DirectionController::class, 'destroy'])->middleware('permission:directions.delete')->name('destroy');
 
         // API endpoints for AJAX
         Route::get('/faculty/{faculty}/departments', [DirectionController::class, 'getDepartmentsByFaculty'])
@@ -324,28 +324,24 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     });
 
 // Main workload routes
-    Route::middleware(['auth'])->prefix('workloads')->name('workloads.')->group(function () {
+    Route::middleware(['auth', 'permission:workloads.view'])->prefix('workloads')->name('workloads.')->group(function () {
         // Static routes
         Route::get('/', [WorkloadController::class, 'index'])->name('index');
-        Route::get('/create', [WorkloadController::class, 'create'])->name('create');
-        Route::post('/', [WorkloadController::class, 'store'])->name('store');
+        Route::get('/create', [WorkloadController::class, 'create'])->middleware('permission:workloads.create')->name('create');
+        Route::post('/', [WorkloadController::class, 'store'])->middleware('permission:workloads.create')->name('store');
 
         // Parametric routes last
         Route::get('/{workload}', [WorkloadController::class, 'show'])->name('show');
-        Route::get('/{workload}/edit', [WorkloadController::class, 'edit'])->name('edit');
-        Route::put('/{workload}', [WorkloadController::class, 'update'])->name('update');
-        Route::delete('/{workload}', [WorkloadController::class, 'destroy'])->name('destroy');
+        Route::get('/{workload}/edit', [WorkloadController::class, 'edit'])->middleware('permission:workloads.edit')->name('edit');
+        Route::put('/{workload}', [WorkloadController::class, 'update'])->middleware('permission:workloads.edit')->name('update');
+        Route::delete('/{workload}', [WorkloadController::class, 'destroy'])->middleware('permission:workloads.delete')->name('destroy');
         Route::post('/{workload}/remainder', [WorkloadController::class, 'createRemainder'])->name('create-remainder');
 
 
         // Tasdiqlash tizimi
-        Route::post('/{workload}/submit',  [WorkloadController::class, 'submit']) ->name('submit');
-        Route::post('/{workload}/approve', [WorkloadController::class, 'approve'])->name('approve');
-        Route::post('/{workload}/reject',  [WorkloadController::class, 'reject']) ->name('reject');
-
         Route::post('/{workload}/submit',  [WorkloadApprovalController::class, 'submit']) ->name('submit');
-        Route::post('/{workload}/approve', [WorkloadApprovalController::class, 'approve'])->name('approve');
-        Route::post('/{workload}/reject',  [WorkloadApprovalController::class, 'reject']) ->name('reject');
+        Route::post('/{workload}/approve', [WorkloadApprovalController::class, 'approve'])->middleware('permission:workloads.approve')->name('approve');
+        Route::post('/{workload}/reject',  [WorkloadApprovalController::class, 'reject']) ->middleware('permission:workloads.approve')->name('reject');
         Route::post('/bulk-action',        [WorkloadApprovalController::class, 'bulkAction'])->name('bulk-action');
     });
 

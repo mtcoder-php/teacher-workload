@@ -3,43 +3,42 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Department;
 use App\Models\Faculty;
-use Illuminate\Support\Str; // ✅ Str helperini import qilamiz
+use App\Models\Department;
+use Illuminate\Support\Str;
 
 class DepartmentSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $faculty = Faculty::first();
+        $faculty = Faculty::where('name', 'Yangi Asr Universiteti')->first();
 
-        if ($faculty) {
-            $departments = [
-                'Maxsus pedagogika kafedrasi',
-                'Sharq filologiyasi kafedrasi',
-                'Tillar kafedrasi',
-                'Umumta’lim fanlari kafedrasi',
-                'Maktab va maktabgacha ta’lim kafedrasi',
-                'Mumtoz sharq filologiyasi kafedrasi',
-            ];
-
-            foreach ($departments as $departmentName) {
-                Department::firstOrCreate(
-                // Qidirish uchun shart
-                    ['name' => $departmentName],
-                    // Agar topilmasa, quyidagi ma'lumotlar bilan yaratish
-                    [
-                        'faculty_id' => $faculty->id,
-                        'name' => $departmentName,
-                        // ✅ YETISHMAYOTGAN MAYDON QO'SHILDI
-                        // Natija: 'maxsus-pedagogika-kafedrasi' kabi kod generatsiya bo'ladi
-                        'code' => Str::slug($departmentName)
-                    ]
-                );
-            }
+        if (!$faculty) {
+            $this->command->error('Yangi Asr Universiteti topilmadi!');
+            return;
         }
+
+        $departments = [
+            ['name' => 'Maxsus pedagogika kafedrasi',          'code' => 'MPK'],
+            ['name' => 'Umumta\'lim fanlari kafedrasi',        'code' => 'UFK'],
+            ['name' => 'Tillar kafedrasi',                     'code' => 'TK'],
+            ['name' => 'Maktab va maktabgacha ta\'lim kafedrasi', 'code' => 'MMK'],
+            ['name' => 'Mumtoz sharq filologiyasi kafedrasi',  'code' => 'MSF'],
+            ['name' => 'Sharq filologiyasi kafedrasi',         'code' => 'SFK'],
+        ];
+
+        foreach ($departments as $data) {
+            Department::firstOrCreate(
+                ['name' => $data['name']],
+                [
+                    'faculty_id' => $faculty->id,
+                    'name'       => $data['name'],
+                    'code'       => $data['code'],
+                    'is_active'  => true,
+                ]
+            );
+        }
+
+        $this->command->info('DepartmentSeeder: 6 ta kafedra yaratildi.');
     }
 }

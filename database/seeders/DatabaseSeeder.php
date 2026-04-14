@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Subject;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,17 +12,20 @@ class DatabaseSeeder extends Seeder
             // 1. Rollar va Ruxsatlar
             RolePermissionSeeder::class,
 
-            // 2. Tizim Foydalanuvchilari (Admin, Kafedra Mudiri)
-            UserSeeder::class,
-
-            // 3. Universitet Strukturasi
+            // 2. Universitet Strukturasi (Avval struktura!)
             FacultySeeder::class,
             DepartmentSeeder::class,
             DirectionSeeder::class,
 
+            // 3. Tizim Foydalanuvchilari (Kafedralar yaratilgandan keyin!)
+            UserSeeder::class,
+
             // 4. O'quv jarayoni elementlari
-            GroupSeeder::class,      // AcademicYear'ni o'z ichida yaratadi
+            GroupSeeder::class,
             SubjectSeeder::class,
+
+            // 5. O'qituvchilar
+            TeacherSeeder::class,
         ]);
     }
 }

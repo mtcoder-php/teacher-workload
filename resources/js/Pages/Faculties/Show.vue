@@ -159,7 +159,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { useToast } from '@/Composables/useToast'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DeleteModal from '@/Components/DeleteModal.vue'
@@ -184,7 +184,11 @@ function formatDate(date) {
 function doDelete() {
     deleting.value = true
     router.delete(`/faculties/${props.faculty.id}`, {
-        onSuccess: () => { toast.success("Fakultet muvaffaqiyatli o'chirildi!"); router.visit('/faculties') },
+        onSuccess: () => {
+            const flash = usePage().props.flash
+            if (flash?.error) toast.error(flash.error)
+            else { toast.success('Fakultet muvaffaqiyatli o\'chirildi!'); router.visit('/faculties') }
+        },
         onFinish:  () => { deleting.value = false; deleteTarget.value = null },
     })
 }

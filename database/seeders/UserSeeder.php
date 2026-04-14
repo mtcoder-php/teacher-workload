@@ -12,124 +12,88 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. Barcha kerakli rollarni topib olamiz
-        $adminRole = Role::where('name', 'admin')->first();
-        $dekanRole = Role::where('name', 'dekan')->first();
-        $kafedraRole = Role::where('name', 'kafedra_mudiri')->first();
-        $oqituvchiRole = Role::where('name', 'oqituvchi')->first();
+        $adminRole    = Role::where('name', 'admin')->first();
+        $dekanRole    = Role::where('name', 'dekan')->first();
+        $kafedraRole  = Role::where('name', 'kafedra_mudiri')->first();
 
-        // Agar birorta rol topilmasa, xatolik berib to'xtatamiz
-        if (!($adminRole && $dekanRole && $kafedraRole && $oqituvchiRole)) {
-            $this->command->error('Barcha kerakli rollar (admin, dekan, kafedra_mudiri, oqituvchi) topilmadi. RolePermissionSeeder\'ni tekshiring.');
+        if (!($adminRole && $dekanRole && $kafedraRole)) {
+            $this->command->error('Rollar topilmadi. RolePermissionSeeder\'ni tekshiring.');
             return;
         }
 
-        // ==========================================
-        // ADMIN FOYDALANUVCHISI
-        // ==========================================
+        // ADMIN
         User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'admin@yau.uz'],
             [
-                'name' => 'Admin User',
-                'password' => Hash::make('password'),
-                'role_id' => $adminRole->id,
-                'phone' => '+998901234567',
-                'is_active' => true,
+                'name'               => 'Tizim Admini',
+                'password'           => Hash::make('password'),
+                'role_id'            => $adminRole->id,
+                'phone'              => '+998901234567',
+                'is_active'          => true,
+                'email_verified_at'  => now(),
             ]
         );
 
-        // ==========================================
-        // TEST UCHUN KERAKLI STRUKTURANI YARATISH
-        // ==========================================
-        $faculty = Faculty::firstOrCreate(['name' => 'Test Fakulteti'], ['code' => 'TEST-F']);
-
-        $department1 = Department::firstOrCreate(
-            ['name' => 'Dasturiy Injiniiring'],
-            ['faculty_id' => $faculty->id, 'code' => 'DI']
-        );
-
-        $department2 = Department::firstOrCreate(
-            ['name' => 'Tillar kafedrasi'],
-            ['faculty_id' => $faculty->id, 'code' => 'TK']
-        );
-
-        // ==========================================
-        // DEKAN FOYDALANUVCHISI
-        // ==========================================
+        // DEKAN
+        $faculty = Faculty::where('name', 'Yangi Asr Universiteti')->first();
         $dekanUser = User::firstOrCreate(
-            ['email' => 'dekan@example.com'],
+            ['email' => 'dekan@yau.uz'],
             [
-                'name' => 'Dekan Ahmedov',
-                'password' => Hash::make('password'),
-                'role_id' => $dekanRole->id,
-                'phone' => '+998901234568',
-                'is_active' => true,
+                'name'               => 'Tursunov Abdulaziz Karimovich',
+                'password'           => Hash::make('password'),
+                'role_id'            => $dekanRole->id,
+                'phone'              => '+998901234568',
+                'is_active'          => true,
+                'email_verified_at'  => now(),
             ]
         );
-        // Kelajakda Dekan'ni fakultetga bog'lash uchun:
-        // $faculty->dean_id = $dekanUser->id;
-        // $faculty->save();
+        if ($faculty && !$faculty->dean_id) {
+            $faculty->update(['dean_id' => $dekanUser->id]);
+        }
 
-        // ==========================================
-        // KAFEDRA MUDIRI FOYDALANUVCHISI (1-kafedraga)
-        // ==========================================
-        $kafedraMudirUser = User::firstOrCreate(
-            ['email' => 'kafedra@example.com'],
-            [
-                'name' => 'Kafedra Mudiri Aliyev',
-                'password' => Hash::make('password'),
-                'role_id' => $kafedraRole->id,
-                'phone' => '+998901234569',
-                'is_active' => true,
-            ]
-        );
-        // User'ni Teacher profiliga va kafedraga bog'lash
-        Teacher::firstOrCreate(
-            ['user_id' => $kafedraMudirUser->id],
-            ['department_id' => $department1->id, 'position' => 'Kafedra mudiri']
-        );
+        // KAFEDRA MUDIRLARI - har bir kafedraga
+        $kafedraHeads = [
+            'Maxsus pedagogika kafedrasi'             => ['name' => 'Qodirov Mansur Salimovich',    'email' => 'kafedra.mpk@yau.uz'],
+            "Umumta'lim fanlari kafedrasi"            => ['name' => 'Tosheva Hulkar Baxtiyorovna',  'email' => 'kafedra.ufk@yau.uz'],
+            'Tillar kafedrasi'                        => ['name' => 'Hasanov Jamshid Normatovich',  'email' => 'kafedra.tk@yau.uz'],
+            "Maktab va maktabgacha ta'lim kafedrasi"  => ['name' => 'Norova Zulfiya Rahimovna',     'email' => 'kafedra.mmk@yau.uz'],
+            'Mumtoz sharq filologiyasi kafedrasi'     => ['name' => 'Xoliqov Behruz Alimovich',    'email' => 'kafedra.msf@yau.uz'],
+            'Sharq filologiyasi kafedrasi'            => ['name' => 'Yusupov Sardor Hamidovich',   'email' => 'kafedra.sfk@yau.uz'],
+        ];
 
-        // ==========================================
-        // ODDIY O'QITUVCHI FOYDALANUVCHISI (2-kafedraga)
-        // ==========================================
-        $oqituvchiUser = User::firstOrCreate(
-            ['email' => 'teacher@example.com'],
-            [
-                'name' => 'O\'qituvchi Karimov',
-                'password' => Hash::make('password'),
-                'role_id' => $oqituvchiRole->id,
-                'phone' => '+998901234570',
-                'is_active' => true,
-            ]
-        );
-        // User'ni Teacher profiliga va kafedraga bog'lash
-        Teacher::firstOrCreate(
-            ['user_id' => $oqituvchiUser->id],
-            ['department_id' => $department2->id, 'position' => 'O\'qituvchi']
-        );
+        foreach ($kafedraHeads as $deptName => $head) {
+            $department = Department::where('name', $deptName)->first();
+            if (!$department) continue;
 
-        // ==========================================
-        // BOSHQA KAFEDRA MUDIRI (2-kafedraga)
-        // ==========================================
-        $kafedraMudirUser2 = User::firstOrCreate(
-            ['email' => 'kafedra2@example.com'],
-            [
-                'name' => 'Kafedra Mudiri Valiev',
-                'password' => Hash::make('password'),
-                'role_id' => $kafedraRole->id,
-                'phone' => '+998901234571',
-                'is_active' => true,
-            ]
-        );
-        // User'ni Teacher profiliga va kafedraga bog'lash
-        Teacher::firstOrCreate(
-            ['user_id' => $kafedraMudirUser2->id],
-            ['department_id' => $department2->id, 'position' => 'Kafedra mudiri']
-        );
+            $user = User::firstOrCreate(
+                ['email' => $head['email']],
+                [
+                    'name'               => $head['name'],
+                    'password'           => Hash::make('password'),
+                    'role_id'            => $kafedraRole->id,
+                    'is_active'          => true,
+                    'email_verified_at'  => now(),
+                ]
+            );
+
+            $teacher = Teacher::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'department_id'  => $department->id,
+                    'position'       => 'Kafedra mudiri',
+                    'employment_type'=> 'main_job',
+                    'is_active'      => true,
+                ]
+            );
+
+            // Kafedraga mudirni belgilash
+            if (!$department->head_id) {
+                $department->update(['head_id' => $user->id]);
+            }
+        }
+
+        $this->command->info('UserSeeder: Admin, Dekan va Kafedra mudirlari yaratildi.');
     }
 }

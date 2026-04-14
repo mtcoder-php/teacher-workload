@@ -207,18 +207,28 @@ const availableCourses = computed(() => {
 // ─── Yo'nalish items (CheckboxSelect uchun) ───────────────────────────────────
 const directionItems = computed(() => {
     const deptId = local.value.department_id
-    return props.directions
-        .filter(d => d.department_id === deptId)
-        .map(d => {
-            const isMag = d.degree_type === 'magistratura' || d.level === 'magistratura' || d.level === 'magistr'
-            return {
-                id:         d.id,
-                label:      d.name,
-                sublabel:   d.code ?? '',
-                badge:      isMag ? 'Magistratura' : 'Bakalavr',
-                badgeClass: isMag ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600',
-            }
-        })
+
+    // Kafedra mudiri barcha yo'nalishlarni ko'rishi kerak
+    // (boshqa yo'nalish guruhlariga ham o'z kafedrasi o'qituvchisi yuklama olishi mumkin)
+    // O'z kafedrasi yo'nalishlari birinchi, qolganlari keyingisi
+    const sorted = [...props.directions].sort((a, b) => {
+        const aOwn = a.department_id === deptId ? 0 : 1
+        const bOwn = b.department_id === deptId ? 0 : 1
+        return aOwn - bOwn || a.name.localeCompare(b.name)
+    })
+
+    return sorted.map(d => {
+        const isMag = d.degree_type === 'magistratura' || d.level === 'magistratura' || d.level === 'magistr'
+        const isOwn = d.department_id === deptId
+        return {
+            id:         d.id,
+            label:      d.name,
+            sublabel:   d.code ?? '',
+            badge:      isMag ? 'Magistratura' : 'Bakalavr',
+            badgeClass: isMag ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600',
+            group:      isOwn ? 'O\'z kafedrasi yo\'nalishlari' : 'Boshqa yo\'nalishlar',
+        }
+    })
 })
 
 // ─── Guruh items — faqat tanlangan yo'nalish + kursga mos ───────────────────
