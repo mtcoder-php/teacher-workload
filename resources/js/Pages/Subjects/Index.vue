@@ -89,7 +89,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{{ subject.department?.name || '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{{ subject.department?.code || '—' }}</td>
                             <td class="px-6 py-4 text-center hidden sm:table-cell">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-700">{{ subject.course_level }}-kurs</span>
                             </td>
