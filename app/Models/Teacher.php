@@ -75,12 +75,12 @@ class Teacher extends Model
     }
 
     /**
-     * Joriy semestr yuklamalarini olish
+     * Joriy o'quv yili yuklamalarini olish
      */
     public function currentWorkloads(): HasMany
     {
-        return $this->workloads()->whereHas('semester', function ($query) {
-            $query->where('is_current', true);
+        return $this->workloads()->whereHas('academicYear', function ($query) {
+            $query->where('is_active', true);
         });
     }
 
@@ -109,7 +109,7 @@ class Teacher extends Model
 
 
 
-      /**
+    /**
      * Faqat aktiv o'qituvchilarni filtrlash
      */
     public function scopeActive(Builder $query): Builder

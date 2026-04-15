@@ -32,7 +32,7 @@ class TeacherController extends Controller
             $search = $request->search;
             $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -128,18 +128,18 @@ class TeacherController extends Controller
 
     public function show(Teacher $teacher)
     {
-        $teacher->load(['user', 'department.faculty', 'workloads.subject', 'workloads.group', 'workloads.semester']);
+        $teacher->load(['user', 'department.faculty', 'workloads.subject', 'workloads.groups']);
 
         // Statistika
         $stats = [
-            'total_workloads' => $teacher->workloads()->count(),
+            'total_workloads'   => $teacher->workloads()->count(),
             'current_workloads' => $teacher->currentWorkloads()->count(),
-            'total_hours' => $teacher->currentWorkloads()->sum('total_hours'),
+            'total_hours'       => $teacher->currentWorkloads()->sum('total_hours'),
         ];
 
         return Inertia::render('Teachers/Show', [
             'teacher' => $teacher,
-            'stats' => $stats
+            'stats'   => $stats,
         ]);
     }
 
