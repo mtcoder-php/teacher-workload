@@ -65,18 +65,18 @@
                             <th rowspan="2" class="px-2 py-3 text-center border border-blue-700 w-12">SOATBAY</th>
                         </tr>
                         <tr class="bg-blue-800 text-white text-center">
-                            <th class="px-1 py-2 border border-blue-700 w-10">Ma'r</th>
-                            <th class="px-1 py-2 border border-blue-700 w-10">Aml</th>
-                            <th class="px-1 py-2 border border-blue-700 w-10">Lab</th>
-                            <th class="px-1 py-2 border border-blue-700 w-10">Sem</th>
-                            <th class="px-1 py-2 border border-blue-700 w-10">Aml-t</th>
-                            <th class="px-1 py-2 border border-blue-700 w-12 font-bold">Jami</th>
-                            <th class="px-1 py-2 border border-blue-600 w-10">Ma'r</th>
-                            <th class="px-1 py-2 border border-blue-600 w-10">Aml</th>
-                            <th class="px-1 py-2 border border-blue-600 w-10">Lab</th>
-                            <th class="px-1 py-2 border border-blue-600 w-10">Sem</th>
-                            <th class="px-1 py-2 border border-blue-600 w-10">Aml-t</th>
-                            <th class="px-1 py-2 border border-blue-600 w-12 font-bold">Jami</th>
+                            <th class="px-1 py-2 border border-blue-700 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Ma'ruza</span></th>
+                            <th class="px-1 py-2 border border-blue-700 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Amaliy</span></th>
+                            <th class="px-1 py-2 border border-blue-700 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Laborotoriya</span></th>
+                            <th class="px-1 py-2 border border-blue-700 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Seminar</span></th>
+                            <th class="px-1 py-2 border border-blue-700 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Amaliyot</span></th>
+                            <th class="px-1 py-2 border border-blue-700 w-10 font-bold text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Jami</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Ma'ruza</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Amaliy</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Laborotoriya</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Seminar</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-8 text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Amaliyot</span></th>
+                            <th class="px-1 py-2 border border-blue-600 w-10 font-bold text-center"><span style="writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block">Jami</span></th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
