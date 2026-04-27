@@ -47,13 +47,29 @@ class DirectionImport implements
             throw new \Exception("Kafedra topilmadi: '{$kafedra}'. Ma'lumotnoma varag'ini tekshiring.");
         }
 
+        // name + department_id bo'yicha qidiramiz (kod takrorlanishi mumkin)
+        $direction = Direction::where('name', $nomi)
+            ->where('department_id', $department->id)
+            ->first();
+
+        if ($direction) {
+            // Mavjud bo'lsa — yangilaymiz
+            $direction->update([
+                'name'           => $nomi,
+                'degree_type'    => strtolower($daraja) === 'magistratura' ? 'magistratura' : 'bakalavr',
+                'duration_years' => (int)$yillar,
+                'is_active'      => true,
+            ]);
+            return null; // ToModel null qaytarsa update bo'lgan qatorni o'tkazib yuboradi
+        }
+
         return new Direction([
-            'name'          => $nomi,
-            'code'          => $kodi,
-            'department_id' => $department->id,
-            'degree_type'   => strtolower($daraja) === 'magistratura' ? 'magistratura' : 'bakalavr',
-            'duration_years'=> (int)$yillar,
-            'is_active'     => true,
+            'name'           => $nomi,
+            'code'           => $kodi,
+            'department_id'  => $department->id,
+            'degree_type'    => strtolower($daraja) === 'magistratura' ? 'magistratura' : 'bakalavr',
+            'duration_years' => (int)$yillar,
+            'is_active'      => true,
         ]);
     }
 }

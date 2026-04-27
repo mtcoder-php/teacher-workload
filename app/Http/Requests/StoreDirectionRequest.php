@@ -15,7 +15,7 @@ class StoreDirectionRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:directions,code',
+            'code' => 'required|string|max:50',
             'department_id' => 'required|exists:departments,id',
             'degree_type' => 'required|in:bakalavr,magistratura',
             'duration_years' => 'required|integer|min:1|max:6',
@@ -24,12 +24,24 @@ class StoreDirectionRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            // name + department_id kombinatsiyasi unique bo'lishi kerak
+            $exists = \App\Models\Direction::where('name', $this->name)
+                ->where('department_id', $this->department_id)
+                ->exists();
+            if ($exists) {
+                $validator->errors()->add('name', "Bu kafedrada bunday nomli yo'nalish allaqachon mavjud");
+            }
+        });
+    }
+
     public function messages(): array
     {
         return [
             'name.required' => 'Yo\'nalish nomi kiritilishi shart',
             'code.required' => 'Yo\'nalish kodi kiritilishi shart',
-            'code.unique' => 'Bunday kodli yo\'nalish allaqachon mavjud',
             'department_id.required' => 'Kafedra tanlanishi shart',
             'department_id.exists' => 'Tanlangan kafedra topilmadi',
             'degree_type.required' => 'Ta\'lim darajasi tanlanishi shart',

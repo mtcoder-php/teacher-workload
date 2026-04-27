@@ -16,7 +16,7 @@ return new class extends Migration
 
             // Basic info
             $table->string('name');
-            $table->string('code', 50)->unique();
+            $table->string('code', 50);
 
             // Ta'lim darajasi
             $table->enum('degree_type', ['bakalavr', 'magistratura'])->default('bakalavr');
@@ -31,6 +31,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
+            $table->unique(['name', 'department_id']); // Bitta kafedrada yo'nalish nomi takrorlanmasin
+            $table->index('code');                     // Kod takrorlanishi mumkin (masalan: 60110400)
             $table->index(['department_id', 'is_active']);
             $table->index('degree_type');
         });
