@@ -111,8 +111,8 @@
                 Guruh(lar) <span class="text-red-500">*</span>
             </label>
             <p class="text-xs text-gray-500 mb-2">
-                <span v-if="local.is_potok">Potokli: 2–8 ta guruh tanlang</span>
-                <span v-else>Potoksiz: 1 ta guruh tanlang</span>
+                <span v-if="local.is_potok">Potokli: 2–8 ta guruh tanlang (bitta yuklama)</span>
+                <span v-else>Potoksiz: bir yoki bir nechta guruh tanlang (har guruhga alohida yuklama yaratiladi)</span>
                 <span v-if="availableGroupItems.length" class="ml-2 text-gray-400">({{ availableGroupItems.length }} ta guruh mavjud)</span>
             </p>
 
@@ -125,11 +125,11 @@
                 v-else
                 v-model="local.group_ids"
                 :items="availableGroupItems"
-                :placeholder="local.is_potok ? '2 dan 8 tagacha guruh tanlang...' : '1 ta guruh tanlang...'"
+                :placeholder="local.is_potok ? '2 dan 8 tagacha guruh tanlang...' : 'Guruhlarni tanlang...'"
                 search-placeholder="Guruh qidirish..."
                 tag-class="bg-green-100 text-green-700"
                 :has-error="!!errors.group_ids"
-                :max-select="local.is_potok ? 8 : 1"
+                :max-select="local.is_potok ? 8 : 999"
                 :show-select-all="false"
             />
 
@@ -310,8 +310,6 @@ watch(
 
         if (!groups?.length) {
             errors.value.group_ids = 'Kamida 1 ta guruh tanlang'
-        } else if (!potok && groups.length > 1) {
-            errors.value.group_ids = 'Potoksiz holatda faqat 1 ta guruh tanlash mumkin'
         } else if (potok && groups.length < 2) {
             errors.value.group_ids = 'Potokli holatda kamida 2 ta guruh tanlang'
         } else if (potok && groups.length > 8) {

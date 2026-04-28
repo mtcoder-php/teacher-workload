@@ -184,11 +184,19 @@ class WorkloadController extends Controller
     public function store(StoreWorkloadRequest $request)
     {
         try {
-            $workload = $this->workloadService->createWorkload($request->validated());
+            $data     = $request->validated();
+            $workload = $this->workloadService->createWorkload($data);
 
-            $msg = $request->input('status') === 'draft'
-                ? 'Yuklama qoralama sifatida saqlandi!'
-                : 'Yuklama muvaffaqiyatli yaratildi!';
+            $groupCount = count($data['group_ids'] ?? []);
+            $isPotok    = $data['is_potok'] ?? false;
+
+            if ($request->input('status') === 'draft') {
+                $msg = 'Yuklama qoralama sifatida saqlandi!';
+            } elseif (!$isPotok && $groupCount > 1) {
+                $msg = "{$groupCount} ta guruh uchun yuklamalar muvaffaqiyatli yaratildi!";
+            } else {
+                $msg = 'Yuklama muvaffaqiyatli yaratildi!';
+            }
 
             return redirect()->route('workloads.index')->with('success', $msg);
 

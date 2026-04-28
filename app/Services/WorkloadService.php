@@ -39,15 +39,6 @@ class WorkloadService
             }
 
             // ─── 2. direction_id ni aniqlash ─────────────────────────────────
-            //
-            // Wizard direction_ids (array) yuboradi.
-            // workloads jadvali direction_id (bitta integer) saqlaydi.
-            //
-            // Mantiq:
-            //   a) direction_ids[0] bor bo'lsa → uni ishlatamiz
-            //   b) yo'q bo'lsa → group_ids[0] ning direction_id sini olamiz
-            //   c) direction_id allaqachon yuborilgan bo'lsa → shu qiymatni ishlatamiz
-            //
             if (empty($data['direction_id'])) {
                 if (!empty($data['direction_ids']) && is_array($data['direction_ids'])) {
                     $data['direction_id'] = $data['direction_ids'][0];
@@ -63,90 +54,33 @@ class WorkloadService
                 throw new \Exception('Yo\'nalish aniqlanmadi. Iltimos, yo\'nalish tanlang.');
             }
 
-            // ─── 3. Validatsiya ──────────────────────────────────────────────
-            $validationErrors = $this->validationService->validateStoreRequest($data);
-            if (!empty($validationErrors)) {
-                throw new \Exception(implode('; ', $validationErrors));
+            $isPotok   = (bool)($data['is_potok'] ?? false);
+            $groupIds  = $data['group_ids'] ?? [];
+
+            // ─── 3. Potoksiz + ko'p guruh → har biri uchun alohida yuklama ──
+            if (!$isPotok && count($groupIds) > 1) {
+                $firstWorkload = null;
+                foreach ($groupIds as $groupId) {
+                    $singleData              = $data;
+                    $singleData['group_ids'] = [$groupId];
+                    // Har guruh uchun direction_id ni shu guruhdan olish
+                    $group = Group::find($groupId);
+                    if ($group) {
+                        $singleData['direction_id'] = $group->direction_id;
+                    }
+                    $workload = $this->createSingleWorkload($singleData, false);
+                    if (!$firstWorkload) {
+                        $firstWorkload = $workload;
+                    }
+                }
+                DB::commit();
+                return $firstWorkload;
             }
 
-            // ─── 4. Guruhlar va talabalar soni ──────────────────────────────
-            $groups = Group::whereIn('id', $data['group_ids'])->get();
-            if ($groups->isEmpty()) {
-                throw new \Exception('Guruhlar topilmadi');
-            }
-            $totalStudents = $groups->sum('student_count');
-
-            // ─── 5. Reyting ─────────────────────────────────────────────────
-            $rating = $data['rating'] ?? ($totalStudents > 0 ? round($totalStudents / 2, 2) : 0);
-
-            // ─── 6. Potok kodi ───────────────────────────────────────────────
-            $isPotok = (bool)($data['is_potok'] ?? false);
-            if ($isPotok && empty($data['potok_code'])) {
-                $data['potok_code'] = 'POTOK-' . $data['subject_id'] . '-' . strtoupper(uniqid());
-            }
-
-            // ─── 7. Workload turi ────────────────────────────────────────────
-            $workloadType = $this->determineWorkloadType($data, $isPotok);
-
-            // ─── 8. Workload yaratish ────────────────────────────────────────
-            $workload = Workload::create([
-                'department_id'    => $data['department_id'],
-                'direction_id'     => $data['direction_id'],   // ← endi aniq bitta int
-                'teacher_id'       => $data['teacher_id'],
-                'subject_id'       => $data['subject_id'],
-                'academic_year_id' => $data['academic_year_id'],
-
-                // Potok
-                'is_potok'            => $isPotok,
-                'potok_code'          => $data['potok_code'] ?? null,
-                'workload_type'       => $workloadType,
-                'is_potok_remainder'  => false,
-                'parent_potok_id'     => $data['parent_potok_id'] ?? null,
-
-                // 1-semestr soatlari
-                'semester_1_lecture'    => $data['semester_1_lecture']    ?? 0,
-                'semester_1_practical'  => $data['semester_1_practical']  ?? 0,
-                'semester_1_laboratory' => $data['semester_1_laboratory'] ?? 0,
-                'semester_1_seminar'    => $data['semester_1_seminar']    ?? 0,
-                'semester_1_practice'   => $data['semester_1_practice']   ?? 0,
-                'semester_1_exam'       => $data['semester_1_exam']       ?? 0,
-                'semester_1_test'       => $data['semester_1_test']       ?? 0,
-
-                // 2-semestr soatlari
-                'semester_2_lecture'    => $data['semester_2_lecture']    ?? 0,
-                'semester_2_practical'  => $data['semester_2_practical']  ?? 0,
-                'semester_2_laboratory' => $data['semester_2_laboratory'] ?? 0,
-                'semester_2_seminar'    => $data['semester_2_seminar']    ?? 0,
-                'semester_2_practice'   => $data['semester_2_practice']   ?? 0,
-                'semester_2_exam'       => $data['semester_2_exam']       ?? 0,
-                'semester_2_test'       => $data['semester_2_test']       ?? 0,
-
-                // Qo'shimcha
-                'coursework_hours'   => $data['coursework_hours']   ?? 0,
-                'diploma_hours'      => $data['diploma_hours']       ?? 0,
-                'consultation_hours' => $data['consultation_hours']  ?? 0,
-
-                // Statistika
-                'total_students' => $totalStudents,
-                'rating'         => $rating,
-                'has_rating'     => $data['has_rating'] ?? false,
-                'status'         => $data['status'] ?? 'draft',
-                'notes'          => $data['notes'] ?? null,
-            ]);
-
-            // ─── 9. Guruhlarni bog'lash ──────────────────────────────────────
-            $workload->groups()->attach($data['group_ids']);
+            // ─── 4. Oddiy yaratish (1 guruh yoki potok) ──────────────────────
+            $workload = $this->createSingleWorkload($data, $isPotok);
 
             DB::commit();
-
-            Log::info('Workload created', [
-                'id'         => $workload->id,
-                'type'       => $workloadType,
-                'is_potok'   => $isPotok,
-                'direction'  => $data['direction_id'],
-                'groups'     => count($data['group_ids']),
-            ]);
-
             return $workload;
 
         } catch (\Exception $e) {
@@ -157,9 +91,91 @@ class WorkloadService
     }
 
     /**
-     * Workload turini aniqlash
+     * Bitta yuklama yaratish (ichki metod)
      */
-    private function determineWorkloadType(array $data, bool $isPotok): string
+    private function createSingleWorkload(array $data, bool $isPotok): Workload
+    {
+        // Validatsiya
+        $validationErrors = $this->validationService->validateStoreRequest($data);
+        if (!empty($validationErrors)) {
+            throw new \Exception(implode('; ', $validationErrors));
+        }
+
+        // Guruhlar
+        $groups = Group::whereIn('id', $data['group_ids'])->get();
+        if ($groups->isEmpty()) {
+            throw new \Exception('Guruhlar topilmadi');
+        }
+        $totalStudents = $groups->sum('student_count');
+
+        // Reyting
+        $rating = $data['rating'] ?? ($totalStudents > 0 ? round($totalStudents / 2, 2) : 0);
+
+        // Potok kodi
+        if ($isPotok && empty($data['potok_code'])) {
+            $data['potok_code'] = 'POTOK-' . $data['subject_id'] . '-' . strtoupper(uniqid());
+        }
+
+        // Workload turi
+        $workloadType = $this->determineWorkloadType($data, $isPotok);
+
+        // Workload yaratish
+        $workload = Workload::create([
+            'department_id' => $data['department_id'],
+            'direction_id' => $data['direction_id'],
+            'teacher_id' => $data['teacher_id'],
+            'subject_id' => $data['subject_id'],
+            'academic_year_id' => $data['academic_year_id'],
+
+            'is_potok' => $isPotok,
+            'potok_code' => $data['potok_code'] ?? null,
+            'workload_type' => $workloadType,
+            'is_potok_remainder' => false,
+            'parent_potok_id' => $data['parent_potok_id'] ?? null,
+
+            'semester_1_lecture' => $data['semester_1_lecture'] ?? 0,
+            'semester_1_practical' => $data['semester_1_practical'] ?? 0,
+            'semester_1_laboratory' => $data['semester_1_laboratory'] ?? 0,
+            'semester_1_seminar' => $data['semester_1_seminar'] ?? 0,
+            'semester_1_practice' => $data['semester_1_practice'] ?? 0,
+            'semester_1_exam' => $data['semester_1_exam'] ?? 0,
+            'semester_1_test' => $data['semester_1_test'] ?? 0,
+
+            'semester_2_lecture' => $data['semester_2_lecture'] ?? 0,
+            'semester_2_practical' => $data['semester_2_practical'] ?? 0,
+            'semester_2_laboratory' => $data['semester_2_laboratory'] ?? 0,
+            'semester_2_seminar' => $data['semester_2_seminar'] ?? 0,
+            'semester_2_practice' => $data['semester_2_practice'] ?? 0,
+            'semester_2_exam' => $data['semester_2_exam'] ?? 0,
+            'semester_2_test' => $data['semester_2_test'] ?? 0,
+
+            'coursework_hours' => $data['coursework_hours'] ?? 0,
+            'diploma_hours' => $data['diploma_hours'] ?? 0,
+            'consultation_hours' => $data['consultation_hours'] ?? 0,
+
+            'total_students' => $totalStudents,
+            'rating' => $rating,
+            'has_rating' => $data['has_rating'] ?? false,
+            'status' => $data['status'] ?? 'draft',
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        // Guruhni bog'lash
+        $workload->groups()->attach($data['group_ids']);
+
+        Log::info('Workload created', [
+            'id' => $workload->id,
+            'type' => $workloadType,
+            'is_potok' => $isPotok,
+            'groups' => count($data['group_ids']),
+        ]);
+
+        return $workload;
+    }
+        /**
+         * Workload turini aniqlash
+         */
+        private function determineWorkloadType(array $data, bool $isPotok): string
     {
         if ($isPotok) {
             return 'lecture_only';
@@ -178,13 +194,13 @@ class WorkloadService
     }
 
 
-    /**
-     * Yuklamani yangilash
-     *
-     * Har doim:      teacher_id, notes
-     * Faqat draft:   barcha soat maydonlari
-     */
-    public function updateWorkload(Workload $workload, array $data): Workload
+        /**
+         * Yuklamani yangilash
+         *
+         * Har doim:      teacher_id, notes
+         * Faqat draft:   barcha soat maydonlari
+         */
+        public function updateWorkload(Workload $workload, array $data): Workload
     {
         DB::beginTransaction();
 
@@ -257,10 +273,10 @@ class WorkloadService
     }
 
 
-    /**
-     * Yuklamani o'chirish
-     */
-    public function deleteWorkload(Workload $workload): bool
+        /**
+         * Yuklamani o'chirish
+         */
+        public function deleteWorkload(Workload $workload): bool
     {
         if ($workload->status !== 'draft') {
             throw new \Exception('Faqat qoralama yuklamalarni o\'chirish mumkin!');
@@ -269,10 +285,10 @@ class WorkloadService
         return true;
     }
 
-    /**
-     * Potok qoldig'i (amaliy soatlar) yaratish
-     */
-    public function createPotokRemainder(array $data, int $potokId): Workload
+        /**
+         * Potok qoldig'i (amaliy soatlar) yaratish
+         */
+        public function createPotokRemainder(array $data, int $potokId): Workload
     {
         DB::beginTransaction();
 
@@ -328,4 +344,4 @@ class WorkloadService
             throw $e;
         }
     }
-}
+    }

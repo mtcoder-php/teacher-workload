@@ -26,7 +26,7 @@ class StoreWorkloadRequest extends FormRequest
             'is_potok'        => 'required|boolean',
 
             // ─── Step 2 ───────────────────────────────────────────────────────
-            'group_ids'       => 'required|array|min:1|max:8',
+            'group_ids'       => 'required|array|min:1',
             'group_ids.*'     => 'exists:groups,id',
 
             // ─── Step 3 ───────────────────────────────────────────────────────
@@ -83,9 +83,10 @@ class StoreWorkloadRequest extends FormRequest
             if ($this->boolean('is_potok') && $groupCount < 2) {
                 $v->errors()->add('group_ids', 'Potokli holatda kamida 2 ta guruh tanlang');
             }
-            if (!$this->boolean('is_potok') && $groupCount > 1) {
-                $v->errors()->add('group_ids', 'Potoksiz holatda faqat 1 ta guruh tanlash mumkin');
+            if ($this->boolean('is_potok') && $groupCount > 8) {
+                $v->errors()->add('group_ids', 'Potokli holatda maksimal 8 ta guruh tanlash mumkin');
             }
+
 
             // Kamida 1 soat kiritilishi kerak
             $hourFields = [
